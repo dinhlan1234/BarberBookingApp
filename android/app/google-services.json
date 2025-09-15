@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "73112237644",
+    "project_id": "appsales-a042c",
+    "storage_bucket": "appsales-a042c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73112237644:android:b7f4eacbab5e50cc40a6e9",
+        "android_client_info": {
+          "package_name": "com.example.appsales"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQ1JjvjvTmJacHUGtzmZbnoNMH1OtW1TE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73112237644:android:9935bba95eba3c4340a6e9",
+        "android_client_info": {
+          "package_name": "com.example.baberbookingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQ1JjvjvTmJacHUGtzmZbnoNMH1OtW1TE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:73112237644:android:7c8af6b14b1a02d240a6e9",
+        "android_client_info": {
+          "package_name": "com.example.testrunflutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQ1JjvjvTmJacHUGtzmZbnoNMH1OtW1TE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
