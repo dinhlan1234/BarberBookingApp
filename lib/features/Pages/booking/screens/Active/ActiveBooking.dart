@@ -1,14 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart';
 import 'package:testrunflutter/core/widgets/TextBasic.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:testrunflutter/data/models/BookingModel/BookingSchedules.dart';
 import 'package:testrunflutter/data/models/BookingModel/BookingWithShop.dart';
-import 'package:testrunflutter/features/Pages/booking/screens/Process.dart';
+import 'package:testrunflutter/features/Pages/booking/cubit/booking_cubit.dart';
+import 'package:testrunflutter/features/Pages/booking/screens/Active/Process.dart';
 
 Widget ActiveBooking(List<BookingWithShop> list){
+  if(list.isEmpty){
+    return Center(child: customText(text: 'Bạn chưa có lịch trình nào...', color: Colors.black, fonSize: 14.sp, fonWeight: FontWeight.normal),);
+  }
   return ListView.builder(
       itemCount: list.length,
       itemBuilder: (context,index){
@@ -18,6 +23,7 @@ Widget ActiveBooking(List<BookingWithShop> list){
 }
 
 Widget booking(BuildContext context,BookingWithShop b){
+  final bookingCubit = context.read<BookingCubit>();
   return Container(
     padding: EdgeInsets.all(10.r),
     decoration: BoxDecoration(
@@ -34,7 +40,10 @@ Widget booking(BuildContext context,BookingWithShop b){
     child: GestureDetector(
       onTap: (){
         Navigator.push(context, PageRouteBuilder(pageBuilder: (context, animation, secondaryAnimation)
-        => Process(bookingWithShop: b),
+        =>  BlocProvider.value(
+          value: bookingCubit,
+          child: Process(bookingWithShop: b),
+        ),
           transitionsBuilder: (context, animation, secondaryAnimation, child,) {
             const begin = Offset(1.0, 0.0,); // Bắt đầu bên phải màn hình
             const end = Offset.zero; // Kết thúc ở vị trí hiện tại

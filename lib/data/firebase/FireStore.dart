@@ -7,6 +7,7 @@ import 'package:testrunflutter/core/notification/Notification.dart';
 import 'package:testrunflutter/data/models/BankInfoModel.dart';
 import 'package:testrunflutter/data/models/BookingModel/BookingDateModel.dart';
 import 'package:testrunflutter/data/models/BookingModel/BookingSchedules.dart';
+import 'package:testrunflutter/data/models/BookingModel/BookingWithShop.dart';
 import 'package:testrunflutter/data/models/BookingModel/ReviewModel.dart';
 import 'package:testrunflutter/data/models/BookingModel/ServicesSelected.dart';
 import 'package:testrunflutter/data/models/LocationModel.dart';
@@ -304,6 +305,33 @@ class FireStoreDatabase {
     }
   }
 
+  // lay lich su lich hen
+  Future<List<BookingWithShop>> getHistoryForUser(String idUser) async{
+    try{
+      final docSnapshot = await FirebaseFirestore.instance
+                          .collection('BookingSchedules')
+                          .where('idUser',isEqualTo: idUser)
+                          .where('status',whereIn: ['Hoàn thành1','Hoàn thành2'])
+                          .get();
+      final bookings = docSnapshot.docs.map((doc) => BookingSchedules.fromJson(doc.data())).toList();
+      final bookingWithShops = await Future.wait(bookings.map((b) async {
+        final shopDoc = await FirebaseFirestore.instance
+            .collection('Shops')
+            .doc(b.idShop)
+            .get();
+
+        final shop = ShopModel.fromJson({
+          'id': shopDoc.id,
+          ...shopDoc.data()!,
+        });
+        return BookingWithShop(booking: b, shop: shop);
+      })); return bookingWithShops;
+    }catch(e){
+      print(e);
+      return [];
+    }
+  }
+
   
   // Cập nhật trạng thái đơn
   Future<bool> updateStatus(BookingSchedules bookingSchedules) async{
@@ -318,6 +346,19 @@ class FireStoreDatabase {
     }
   }
 
+  // review
+  Future<bool> review(String idSchedules,ReviewModel review) async{
+    try{
+      final docRef = FirebaseFirestore.instance.collection('BookingSchedules').doc(idSchedules);
+      await docRef.update({
+        'reviewModel': review.toJson()
+      });
+      return true;
+    }catch(e){
+      print(e);
+      return false;
+    }
+  }
 
 
 

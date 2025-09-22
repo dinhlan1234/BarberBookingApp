@@ -33,25 +33,6 @@ class _InvoiceState extends State<Invoice> {
     servicesSelected = widget.tempData['servicesSelected'] as ServicesSelected;
     bookingDateModel = widget.tempData['bookingDateModel'] as BookingDateModel;
   }
-  List<Map<String, dynamic>> listServices = [
-  {
-  'image': 'assets/images/barber4.png',
-  'name': 'Cắt tóc nam',
-  'note': 'Phong cách hiện đại, cá tính',
-  'price': 80000,
-},
-{
-'image': 'assets/images/barber5.png',
-'name': 'Cạo râu',
-'note': 'Sạch sẽ, gọn gàng',
-'price': 50000,
-},
-{
-'image': 'assets/images/barber6.png',
-'name': 'Chăm sóc da',
-'note': 'Thư giãn và dưỡng da',
-'price': 120000,
-}];
 
 @override
 Widget build(BuildContext context) {

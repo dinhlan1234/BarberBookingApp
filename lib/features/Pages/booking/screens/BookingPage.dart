@@ -3,15 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:testrunflutter/core/widgets/TextBasic.dart';
 import 'package:testrunflutter/data/firebase/FireStore.dart';
-import 'package:testrunflutter/data/models/BookingModel/BookingSchedules.dart';
 import 'package:testrunflutter/data/models/BookingModel/BookingWithShop.dart';
 import 'package:testrunflutter/data/models/UserModel.dart';
 import 'package:testrunflutter/data/repositories/prefs/UserPrefsService.dart';
 import 'package:testrunflutter/features/Pages/booking/cubit/booking_cubit.dart';
 import 'package:testrunflutter/features/Pages/booking/cubit/booking_state.dart';
-import 'package:testrunflutter/features/Pages/booking/screens/ActiveBooking.dart';
-import 'package:testrunflutter/features/Pages/booking/screens/Process.dart';
-import 'package:testrunflutter/features/Pages/booking/screens/History.dart';
+import 'package:testrunflutter/features/Pages/booking/cubit/history/historyCubit.dart';
+import 'package:testrunflutter/features/Pages/booking/cubit/history/historyState.dart';
+import 'package:testrunflutter/features/Pages/booking/screens/Active/ActiveBooking.dart';
+import 'package:testrunflutter/features/Pages/booking/screens/History/History.dart';
 
 class BookingPage extends StatefulWidget {
   const BookingPage({super.key});
@@ -32,25 +32,28 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   Future<void> _fetchUser() async {
-    final userData = await UserPrefsService.getUser();
+    final userData = await UserPrefsService.getUser() ?? await dtb.getUserByEmail();
     if (userData != null) {
       setState(() {
         _userModel = userData;
       });
-    } else {
-      final newData = await dtb.getUserByEmail();
-      setState(() {
-        _userModel = newData;
-      });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
     if (_userModel == null) return Center(child: CircularProgressIndicator());
 
-    return BlocProvider(
-      create: (_) => BookingCubit(idUser: _userModel!.id),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => BookingCubit(idUser: _userModel!.id),
+        ),
+        BlocProvider(
+          create: (_) => HistoryCubit(idUser: _userModel!.id),
+        ),
+      ],
       child: Builder(
         builder: (context) {
           return Scaffold(
@@ -131,7 +134,7 @@ class _BookingPageState extends State<BookingPage> {
                               Row(
                                 children: [
                                   _buildTab("Lịch trình ", 0),
-                                  _buildTab("Lịch sử", 2),
+                                  _buildTab("Lịch sử", 1),
                                 ],
                               ),
                             ],
@@ -182,7 +185,48 @@ class _BookingPageState extends State<BookingPage> {
                                 }
                                 return const SizedBox();
                           })
-                              : HistoryBooking(),
+                              : BlocBuilder<HistoryCubit,HistoryState>(builder: (context,state){
+                                if(state is HistoryLoading){
+                                  return const Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }else if(state is HistoryLoaded){
+                                  List<BookingWithShop> list = state.list;
+                                  return HistoryBooking(list);
+                                }else if(state is HistoryError){
+                                  Center(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.error_outline,
+                                          size: 60.sp,
+                                          color: Colors.red[400],
+                                        ),
+                                        SizedBox(height: 16.h),
+                                        Text(
+                                          'Có lỗi xảy ra',
+                                          style: TextStyle(
+                                            fontSize: 18.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.red[600],
+                                          ),
+                                        ),
+                                        SizedBox(height: 8.h),
+                                        Text(
+                                          state.message,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+                                return SizedBox();
+                          }),
                         ),
                       ],
                     ),
