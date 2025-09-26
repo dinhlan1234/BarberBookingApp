@@ -20,10 +20,13 @@ import 'package:testrunflutter/data/models/ShopWithDistance.dart';
 import 'package:testrunflutter/data/models/UserModel.dart';
 import 'package:testrunflutter/data/repositories/prefs/UserPrefsService.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/City/CityState.dart';
+import 'package:testrunflutter/features/Pages/home/screens/more/NearShop.dart';
+import 'package:testrunflutter/features/Pages/home/screens/more/RateShop.dart';
 import 'package:testrunflutter/features/Pages/home/screens/search/search_shop_field.dart';
 import 'package:testrunflutter/features/Pages/home/widgets/HomePopup.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/City/CityCubit.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -46,9 +49,9 @@ class _HomePageState extends State<HomePage> {
   late final String lon;
   bool _isLoading = true;
 
-
   Map<String,dynamic>? data;
   List<ShopWithDistance> listNearestShops = [];
+  List<ShopWithDistance> listRateShops = [];
 
   @override
   void dispose() {
@@ -61,12 +64,13 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     Future.wait([
-    getUser(),
-    fetchLocation(),
+      getUser(),
+      fetchLocation(),
     ]).then((_){
       if (mounted) setState(() => _isLoading = false);
     });
   }
+
   Future<void> getUser() async {
     final userData = await UserPrefsService.getUser();
     if (mounted) {
@@ -75,13 +79,14 @@ class _HomePageState extends State<HomePage> {
       });
     } else {
       final newData = await dtb.getUserByEmail();
-      if (mounted) { // Kiểm tra mounted
+      if (mounted) {
         setState(() {
           _userModel = newData;
         });
       }
     }
   }
+
   Future<void> fetchLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
@@ -107,11 +112,16 @@ class _HomePageState extends State<HomePage> {
       lon = position.longitude.toString();
 
       if(lat.isNotEmpty && lon.isNotEmpty){
-        final listShop = await dtb.nearestShops(double.parse(lat), double.parse(lon));
-        if(listShop.isNotEmpty){
+        final result = await Future.wait([
+          dtb.nearestShops(double.parse(lat), double.parse(lon)),
+          dtb.getMostRated(double.parse(lat), double.parse(lon))
+        ]);
+
+        if(result[0].isNotEmpty && result[1].isNotEmpty){
           if(mounted){
             setState(() {
-              listNearestShops = listShop;
+              listNearestShops = result[0];
+              listRateShops = result[1];
             });
           }
         }
@@ -124,327 +134,635 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String,dynamic>> shops = [
-      {
-        'image': 'assets/images/avtBarber.jpg',
-        'name': 'Master piece Barbershop – Haircut styling',
-        'address': 'Joga Expo Centre (2 km)',
-        'rate': '5.0',
-      },
-      {
-        'image': 'assets/images/avtBarber.jpg',
-        'name': 'Bom Barber – Haircut styling',
-        'address': '39 Lê Thiện Trị',
-        'rate': '5.0',
-      },
-      {
-        'image': 'assets/images/avtBarber.jpg',
-        'name': 'Central Barber – Haircut styling',
-        'address': '3 Cách Mạng Tháng 8',
-        'rate': '5.0',
-      },
-    ];
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(20.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0XFF363062)),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                'Đang tải dữ liệu...',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  color: const Color(0xFF6B7280),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         controller: _scrollController,
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 15.h,horizontal: 12.w),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          children: [
+            // Header section with gradient background
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0XFF363062),
+                    const Color(0XFF363062).withOpacity(0.9),
+                  ],
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24.r),
+                  bottomRight: Radius.circular(24.r),
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 30.h),
+                  child: Column(
                     children: [
+                      // User info row
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.location_on_rounded, color: const Color(0XFF363062),
-                            weight: 16.w,),
-                          SizedBox(width: 1.w,),
-                          customText(
-                            text: _userModel!.provinceName,
-                            color: Color(0xFF6B7280),
-                            fonSize: 14.sp,
-                            fonWeight: FontWeight.normal,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.location_on_rounded,
+                                      color: Colors.white70,
+                                      size: 18.sp,
+                                    ),
+                                    SizedBox(width: 6.w),
+                                    Text(
+                                      _userModel?.provinceName ?? 'Đang tải...',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                SizedBox(height: 4.h),
+                                Text(
+                                  'Chào, ${_userModel?.name ?? 'Người dùng'}!',
+                                  style: TextStyle(
+                                    fontSize: 20.sp,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.all(3.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(50.r),
+                            ),
+                            child: CircleAvatar(
+                              radius: 24.r,
+                              backgroundImage: _userModel != null
+                                  ? _userModel!.avatarUrl == '0'
+                                  ? AssetImage('assets/images/avtMacDinh.jpg')
+                                  : CachedNetworkImageProvider(_userModel!.avatarUrl)
+                                  : AssetImage('assets/images/avtMacDinh.jpg'),
+                            ),
                           )
                         ],
                       ),
-                    Row(
-                      children: [
-                        SizedBox(width: 4.w,),
-                        _userModel == null
-                            ? Center(child: CircularProgressIndicator(),)
-                            : Text(
-                          _userModel!.name,
-                          style: TextStyle(fontSize: 18.sp, color: const Color(0XFF111827)),)
+                      SizedBox(height: 24.h),
+
+                      // Search field
+                      SearchShopField(lat: double.parse(lat), lon: double.parse(lon), userModel: _userModel!),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Main content
+            Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
+                children: [
+                  // Hero banner
+                  Container(
+                    width: double.infinity,
+                    height: 220.h,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          const Color(0XFFFBBF74).withOpacity(0.9),
+                          const Color(0XFFFBBF74),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0XFFFBBF74).withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
-                    )
-                    ],
-                  ),
-                  CircleAvatar(
-                    backgroundImage: _userModel != null
-                        ? _userModel!.avatarUrl == '0'
-                              ? AssetImage('assets/images/avtMacDinh.jpg')
-                              : CachedNetworkImageProvider(_userModel!.avatarUrl)
-                        : AssetImage('assets/images/avtMacDinh.jpg'),
-                  )
-                ],
-              ),
-              SizedBox(height: 14.h),
-              // phần hình ảnh lớn
-              Container(
-                width: 339.w,
-                height: 200.h,
-                clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Stack(
-                  children: [
-                    Image.asset('assets/images/barber2.png',width: double.infinity,height: double.infinity,fit: BoxFit.cover,),
-                    Positioned(
-                        top: 12.h,
-                        left: 13.w,
-                        child: Container(
-                            width: 56.w,
-                            height: 56.h,
+                    ),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20.r),
+                          child: Image.asset(
+                            'assets/images/barber2.png',
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20.r),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.6),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 20.h,
+                          left: 20.w,
+                          child: Container(
+                            padding: EdgeInsets.all(12.w),
                             decoration: BoxDecoration(
-                                color: const Color(0XFFFBBF74),
-                                shape: BoxShape.rectangle,
-                                borderRadius: BorderRadius.circular(12.r)
+                              color: Colors.white.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(16.r),
                             ),
-                            child: Image.asset('assets/images/Barber3.png',width:double.infinity,height: double.infinity,fit: BoxFit.cover,)
-                        )
-                    ),
-                    Positioned(
-                        top: 30.h,
-                        right: 0.w,
-                        child: Image.asset('assets/images/welcome3.png',width:150.w,height:190.h,fit: BoxFit.cover,)
-                    ),
-                    Positioned(
-                        bottom: 5.h,
-                        left: 5.w,
-                        child: ElevatedButton(
-                            onPressed: () async{
-
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0XFF363062),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.r)
+                            child: Image.asset(
+                              'assets/images/Barber3.png',
+                              width: 32.w,
+                              height: 32.h,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 25.h,
+                          right: 0.w,
+                          child: Image.asset(
+                            'assets/images/welcome3.png',
+                            width: 140.w,
+                            height: 170.h,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 20.h,
+                          left: 20.w,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tìm kiếm\nBarber Shop tốt nhất',
+                                style: TextStyle(
+                                  fontSize: 18.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.2,
+                                ),
                               ),
-                              padding: EdgeInsets.symmetric(horizontal: 30.w),
-                            ),
-                            child: Text('Đặt Ngay',style: TextStyle(fontSize: 12.sp,color: Colors.white),)
-                        )
-                    )
-                  ],
-                ),
-              ),
-              SizedBox(height: 14.h,),
-              // Phần tìm kiếm
-              SearchShopField(lat: double.parse(lat), lon: double.parse(lon),userModel: _userModel!),
-              SizedBox(height: 14.h,),
-
-              // quán cắt tóc gần đây
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text('Quán cắt tóc gần đây',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17 .sp,color: const Color(0XFF111827)),),
-                ],
-              ),
-              SizedBox(height: 14.h,),
-              if (listNearestShops.isNotEmpty)
-                ...listNearestShops.take(3).map((shop) {
-                  final locationModel = shop.shop.location;
-                  return ShopCard(
-                    shop: shop.shop,
-                    km: shop.distanceKm,
-                    urlImage: shop.shop.shopAvatarImageUrl,
-                    name: shop.shop.shopName,
-                    address: locationModel.address,
-                    rate: '${double.parse(shop.ratingModel.rating.toString())} (${shop.ratingModel.quantity})',
-                  );
-                }).toList()
-              else
-                SizedBox(
-                  height: 100.h,
-                  child: const Center(
-                    child: Text(
-                      'Không có quán cắt tóc gần đây',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
-                  ),
-                ),
-
-              OutlinedButton(
-                  onPressed: (){},
-                  style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: const Color(0XFF363062),width: 1.5.w),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r)
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h,horizontal: 16.w)
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Xem tất cả',style: TextStyle(fontSize: 13.sp,color: const Color(0XFF363062)),),
-                      SizedBox(width: 5.w,),
-                      Icon(Icons.open_in_new_outlined,color: Color(0xFF363062), size: 22,)
-                    ],
-                  )
-              ),
-              SizedBox(height: 16.h,),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Đánh giá nhiều nhất', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17.sp, color: const Color(0xFF111827))),
-                  SizedBox(height: 12.h),
-                  SizedBox(
-                    height: 200.h, // Chiều cao cố định cho PageView
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: shops.length,
-                      onPageChanged: (index){
-                        setState(() {
-                          _currentPage = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        final shop = shops[index];
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12.r),
-                              child: Image.asset(
-                                shop['image'],
-                                width: double.infinity,
-                                height: 200.h,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 10.h,
-                              right: 10.w,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF363062),
-                                  borderRadius: BorderRadius.circular(8.r),
+                              SizedBox(height: 12.h),
+                              ElevatedButton(
+                                onPressed: () async {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: const Color(0XFF363062),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25.r),
+                                  ),
+                                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                                  elevation: 0,
                                 ),
                                 child: Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Booking',
-                                      style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                                      'Đặt Ngay',
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                    SizedBox(width: 6.w),
-                                    Icon(Icons.calendar_month, color: Colors.white, size: 18.sp),
+                                    SizedBox(width: 8.w),
+                                    Icon(Icons.arrow_forward_rounded, size: 16.sp),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
+                            ],
+                          ),
+                        )
+                      ],
                     ),
                   ),
-                  SizedBox(height: 12.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      SmoothPageIndicator(
-                        controller: _pageController,
-                        count: shops.length,
-                        effect: ExpandingDotsEffect(
-                          activeDotColor: const Color(0xFF363062),
-                          dotColor: const Color(0xFF6B7280),
-                          dotHeight: 8.h,
-                          dotWidth: 8.w,
-                          spacing: 6.w,
+                  SizedBox(height: 32.h),
+
+                  // Nearby shops section
+                  _buildSectionHeader('Quán cắt tóc gần đây', Icons.location_on_rounded),
+                  SizedBox(height: 16.h),
+
+                  if (listNearestShops.isNotEmpty)
+                    ...listNearestShops.take(3).map((shop) {
+                      final locationModel = shop.shop.location;
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 16.h),
+                        child: ShopCard(
+                          shop: shop.shop,
+                          km: shop.distanceKm,
+                          urlImage: shop.shop.shopAvatarImageUrl,
+                          name: shop.shop.shopName,
+                          address: locationModel.address,
+                          rate: '${double.parse(shop.ratingModel.rating.toString())} (${shop.ratingModel.quantity})',
                         ),
+                      );
+                    }).toList()
+                  else
+                    _buildEmptyState('Không có quán cắt tóc gần đây', Icons.store_outlined),
+
+                  SizedBox(height: 16.h),
+                  _buildViewAllButton(() {
+                    Navigator.push(context, _createSlideRoute(NearShop(list: listNearestShops)));
+                  }),
+
+                  SizedBox(height: 32.h),
+
+                  // Top rated section
+                  _buildSectionHeader('Đánh giá cao nhất', Icons.star_rounded),
+                  SizedBox(height: 16.h),
+
+                  if (listRateShops.isNotEmpty)
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  SizedBox(height: 12.h),
-                  Text(
-                    shops[_currentPage]['name'],
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp, color: const Color(0xFF111827)),
-                  ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, size: 16.sp, color: const Color(0xFF6B7280)),
-                      SizedBox(width: 4.w),
-                      Text(
-                        shops[_currentPage]['address'],
-                        style: TextStyle(color: const Color(0xFF6B7280), fontSize: 13.sp),
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            height: 240.h,
+                            child: PageView.builder(
+                              controller: _pageController,
+                              itemCount: listRateShops.length.clamp(0, 3),
+                              onPageChanged: (index) {
+                                setState(() {
+                                  _currentPage = index;
+                                });
+                              },
+                              itemBuilder: (context, index) {
+                                final shop = listRateShops[index];
+                                return Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(20.r),
+                                      child: CachedNetworkImage(
+                                        imageUrl: shop.shop.backgroundImageUrl,
+                                        width: double.infinity,
+                                        height: 240.h,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(
+                                          color: Colors.grey[200],
+                                          child: const Center(child: CircularProgressIndicator()),
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(20.r),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            Colors.black.withOpacity(0.7),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 16.h,
+                                      right: 16.w,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.9),
+                                          borderRadius: BorderRadius.circular(20.r),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.star_rounded,
+                                              color: Colors.amber,
+                                              size: 16.sp,
+                                            ),
+                                            SizedBox(width: 4.w),
+                                            Text(
+                                              '${double.parse(shop.ratingModel.rating.toString())}',
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0XFF363062),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 16.h,
+                                      right: 16.w,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF363062),
+                                          borderRadius: BorderRadius.circular(25.r),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Booking',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            SizedBox(width: 6.w),
+                                            Icon(Icons.calendar_month, color: Colors.white, size: 16.sp),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+
+                          // Shop info
+                          Container(
+                            padding: EdgeInsets.all(20.w),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        listRateShops[_currentPage].shop.shopName,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16.sp,
+                                          color: const Color(0xFF111827),
+                                        ),
+                                      ),
+                                    ),
+                                    SmoothPageIndicator(
+                                      controller: _pageController,
+                                      count: listRateShops.length.clamp(0, 3),
+                                      effect: ExpandingDotsEffect(
+                                        activeDotColor: const Color(0xFF363062),
+                                        dotColor: const Color(0xFF6B7280).withOpacity(0.3),
+                                        dotHeight: 8.h,
+                                        dotWidth: 8.w,
+                                        spacing: 6.w,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8.h),
+                                Row(
+                                  children: [
+                                    Icon(Icons.location_on_outlined, size: 16.sp, color: const Color(0xFF6B7280)),
+                                    SizedBox(width: 6.w),
+                                    Expanded(
+                                      child: Text(
+                                        listRateShops[_currentPage].shop.location.address,
+                                        style: TextStyle(color: const Color(0xFF6B7280), fontSize: 13.sp),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 4.h),
+                                Row(
+                                  children: [
+                                    Icon(Icons.star_rounded, size: 16.sp, color: Colors.amber),
+                                    SizedBox(width: 6.w),
+                                    Text(
+                                      '${double.parse(listRateShops[_currentPage].ratingModel.rating.toString())} (${listRateShops[_currentPage].ratingModel.quantity} đánh giá)',
+                                      style: TextStyle(color: const Color(0xFF6B7280), fontSize: 13.sp),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    )
+                  else
+                    _buildEmptyState('Chưa có dữ liệu đánh giá', Icons.star_outline_rounded),
+
+                  SizedBox(height: 16.h),
+                  _buildViewAllButton(() {
+                    Navigator.push(context, _createSlideRoute(RateShop(list: listRateShops)));
+                  }),
+
+                  SizedBox(height: 32.h),
+
+                  // Map section
+                  _buildSectionHeader('Tìm barbershop gần bạn', Icons.map_rounded),
+                  SizedBox(height: 16.h),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: MapCard(isDisplay: true, height: 220, searchController: searchController),
+                    ),
                   ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(Icons.star, size: 16.sp, color: const Color(0xFF6B7280)),
-                      SizedBox(width: 4.w),
-                      Text('5.0', style: TextStyle(color: const Color(0xFF6B7280), fontSize: 13.sp)),
-                    ],
-                  ),
+                  SizedBox(height: 20.h),
                 ],
               ),
-              SizedBox(height: 10.h,),
-              OutlinedButton(
-                  onPressed: (){},
-                  style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: const Color(0XFF363062),width: 1.5.w),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r)
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h,horizontal: 16.w)
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Xem tất cả',style: TextStyle(fontSize: 13.sp,color: const Color(0XFF363062)),),
-                      SizedBox(width: 5.w,),
-                      Icon(Icons.open_in_new_outlined,color: Color(0xFF363062), size: 22,)
-                    ],
-                  )
-              ),
-              SizedBox(height: 16.h,),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Find a barber nearby',
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 16.h,),
-                  MapCard(isDisplay: true,height: 200,searchController: searchController)
-                ],
-              )
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: const Color(0XFF363062).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0XFF363062),
+            size: 20.sp,
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18.sp,
+            color: const Color(0XFF111827),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 40.h, horizontal: 20.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFF6B7280).withOpacity(0.1)),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 48.sp,
+              color: const Color(0xFF6B7280).withOpacity(0.5),
+            ),
+            SizedBox(height: 12.h),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: const Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewAllButton(VoidCallback onPressed) {
+    return Container(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: const Color(0XFF363062), width: 1.5.w),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
+          backgroundColor: Colors.white,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Xem tất cả',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: const Color(0XFF363062),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Icon(
+              Icons.arrow_forward_rounded,
+              color: const Color(0xFF363062),
+              size: 18.sp,
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  PageRouteBuilder _createSlideRoute(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0);
+        const end = Offset.zero;
+        final tween = Tween(begin: begin, end: end);
+        final curvedAnimation = CurvedAnimation(parent: animation, curve: Curves.easeInOut);
+        return SlideTransition(
+          position: tween.animate(curvedAnimation),
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 400),
+    );
+  }
+}
 
 void _openPopup(context) {
   showModalBottomSheet(

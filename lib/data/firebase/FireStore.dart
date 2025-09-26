@@ -397,7 +397,33 @@ class FireStoreDatabase {
     }
   }
 
-
+  // lay nhung quan duoc danh gia nhieu nhat
+  Future<List<ShopWithDistance>> getMostRated(double lat, double lon) async{
+    List<ShopWithDistance> list = [];
+    try{
+      final ratingSnapshot = await FirebaseFirestore.instance.collection('RatingShops').orderBy('rating',descending: true).limit(10).get();
+      for(var doc in ratingSnapshot.docs){
+        final ratingData = doc.data();
+        final ratingModel = RatingModel.fromJson(ratingData);
+        final shopSnapshot = await FirebaseFirestore.instance
+            .collection('Shops')
+            .doc(ratingModel.idShop)
+            .get();
+        if(shopSnapshot.exists){
+          final shop = ShopModel.fromJson(shopSnapshot.data()!);
+          final locationModel = shop.location;
+          final double latShop = locationModel.latitude;
+          final double lonShop = locationModel.longitude;
+          double distanceInMeters = Geolocator.distanceBetween(lat, lon, latShop, lonShop);
+          double distanceKm = distanceInMeters / 1000;
+          list.add(ShopWithDistance(shop: shop, ratingModel: ratingModel, distanceKm: distanceKm));
+        }
+      }
+    }catch(e){
+      print(e);
+    }
+    return list;
+  }
 
   // lấy ngày tháng năm hiện tại
   String getCurrentDate() {

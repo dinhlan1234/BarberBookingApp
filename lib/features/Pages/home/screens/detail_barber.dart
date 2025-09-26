@@ -11,7 +11,7 @@ import 'package:testrunflutter/features/Pages/home/widgets/TabContent/buildTabCo
 import 'package:testrunflutter/features/Pages/home/widgets/buildActionButton.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// trang 2
+// Chi tiet quan
 class DetailBarber extends StatefulWidget {
   final ShopModel shop;
   final double km;
@@ -29,16 +29,27 @@ class _DetailBarberState extends State<DetailBarber>
   int selectedIndex = 0;
   final tabs = ['Về chúng tôi', 'Các dịch vụ', 'Lịch trình', 'Đánh giá'];
   late final ServiceCubit _serviceCubit;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _serviceCubit = ServiceCubit(idShop: widget.shop.id);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.forward();
   }
 
   @override
   void dispose() {
     _serviceCubit.close();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -47,243 +58,546 @@ class _DetailBarberState extends State<DetailBarber>
     return BlocProvider.value(
       value: _serviceCubit,
       child: Scaffold(
-        body: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        icon: Icon(Icons.arrow_back),
-                      ),
-                      customText(
-                        text: 'Chi tiết quán',
-                        color: Color(0XFF111827),
-                        fonSize: 16.sp,
-                        fonWeight: FontWeight.bold,
-                      ),
-                    ],
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: CustomScrollView(
+          slivers: [
+            // Custom App Bar with Hero Image
+            SliverAppBar(
+              expandedHeight: 280.h,
+              pinned: true,
+              backgroundColor: const Color(0XFF363062),
+              leading: Container(
+                margin: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: const Color(0XFF363062),
+                    size: 20.sp,
                   ),
-                  SizedBox(height: 10.h),
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12.r),
-                        child: Image(
-                          image: CachedNetworkImageProvider(
-                            widget.shop.backgroundImageUrl,
-                          ),
-                          width: double.infinity,
-                          height: 210.h,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                isShopOpen(
-                                  widget.shop.openHour,
-                                  widget.shop.closeHour,
-                                  widget.shop.openDays,
-                                )
-                                ? Color(0xFF27AE60)
-                                : Colors.red,
-                            borderRadius: BorderRadius.only(
-                              topRight: Radius.circular(12.r),
-                              bottomLeft: Radius.circular(12.r),
-                            ),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 8.h,
-                              horizontal: 8.w,
-                            ),
-                            child: customText(
-                              text:
-                                  isShopOpen(
-                                    widget.shop.openHour,
-                                    widget.shop.closeHour,
-                                    widget.shop.openDays,
-                                  )
-                                  ? 'Mở cửa'
-                                  : 'Đóng cửa',
-                              color: Colors.white,
-                              fonSize: 14.sp,
-                              fonWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                ),
+              ),
+              actions: [
+                Container(
+                  margin: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12.r),
                   ),
-                  SizedBox(height: 12.h),
-                  // ten shop
-                  customText(text: widget.shop.shopName, color: Color(0xFF111827), fonSize: 16.sp, fonWeight: FontWeight.bold,),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_rounded, color: Color(0xFF8683A1)),
-                      SizedBox(width: 8.w),
-                      customText(
-                        text:
-                            '${widget.shop.location.address} (${widget.km == 0.0 ? '0.1' : widget.km}km)',
-                        color: Color(0xFF8683A1),
-                        fonSize: 14.sp,
-                        fonWeight: FontWeight.normal,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(Icons.star_outlined, color: Color(0xFF8683A1)),
-                      customText(
-                        text: '  ${widget.rate}',
-                        color: Color(0xFF8683A1),
-                        fonSize: 14.sp,
-                        fonWeight: FontWeight.normal,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      buildActionButton(
-                        color: Color(0xFF363062),
-                        checkColor: false,
-                        check: false,
-                        imagePath: 'assets/icons/google-maps.png',
-                        label: 'Maps',
-                        onTab: () {
-                          openMapWithAddress(
-                            address: widget.shop.location.address,
-                            wardName: widget.shop.location.wardName,
-                            districtName: widget.shop.location.districtName,
-                            provinceName: widget.shop.location.provinceName,
-                          );
-                        },
-                      ),
-                      buildActionButton(
-                        color: Color(0xFF363062),
-                        checkColor: true,
-                        check: false,
-                        imagePath: 'assets/icons/bubble-chat.png',
-                        label: 'Chat',
-                        onTab: () {},
-                      ),
-                      buildActionButton(
-                        color: Color(0xFF363062),
-                        checkColor: false,
-                        check: false,
-                        imagePath: 'assets/icons/share.png',
-                        label: 'Share',
-                        onTab: () {},
-                      ),
-                      buildActionButton(
-                        color: isFavorite ? Colors.red : Colors.grey,
-                        checkColor: true,
-                        check: true,
-                        imagePath: 'assets/icons/Share.png',
-                        label: 'Yêu thích',
-                        onTab: () {
-                          setState(() {
-                            isFavorite = !isFavorite;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 20.h),
-
-                  // =============== TAB BAR ===================
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      decoration: BoxDecoration(
-                        color: Color(0XFFEDEFFB),
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: List.generate(tabs.length, (index) {
-                          final selected = selectedIndex == index;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index;
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12.w,
-                                vertical: 8.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? Color(0xFFE0DFF9)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12.r),
-                                border: Border.all(
-                                  color: selected
-                                      ? Color(0xFF363062)
-                                      : Colors.transparent,
-                                ),
-                              ),
-                              child: Text(
-                                tabs[index],
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: selected
-                                      ? Color(0xFF363062)
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
+                  child: IconButton(
+                    onPressed: () {},
+                    icon: Icon(
+                      Icons.share_rounded,
+                      color: const Color(0XFF363062),
+                      size: 20.sp,
                     ),
                   ),
-
-                  SizedBox(height: 20.h),
-
-                  // =============== TAB NỘI DUNG ==============
-                  BlocBuilder<ServiceCubit, ServiceState>(
-                    builder: (context, state) {
-                      if (state is ServiceLoading) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                      if (state is ServiceError) {
-                        return Center(child: Text(state.message));
-                      }
-                      if (state is ServiceLoaded) {
-                        return buildTabContent(
-                          index: selectedIndex,
-                          shop: widget.shop,
-                          listServices: state.listServices, // truyền dữ liệu cho tab
-                        );
-                      }
-                      return SizedBox();
-                    },
-                  ),
-
-                ],
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(24.r),
+                          bottomRight: Radius.circular(24.r),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(24.r),
+                          bottomRight: Radius.circular(24.r),
+                        ),
+                        child: CachedNetworkImage(
+                          imageUrl: widget.shop.backgroundImageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[300],
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(24.r),
+                          bottomRight: Radius.circular(24.r),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 60.h,
+                      right: 16.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: isShopOpen(
+                            widget.shop.openHour,
+                            widget.shop.closeHour,
+                            widget.shop.openDays,
+                          )
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8.w,
+                              height: 8.w,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                            ),
+                            SizedBox(width: 6.w),
+                            Text(
+                              isShopOpen(
+                                widget.shop.openHour,
+                                widget.shop.closeHour,
+                                widget.shop.openDays,
+                              )
+                                  ? 'Đang mở cửa'
+                                  : 'Đã đóng cửa',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+
+            // Main Content
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Padding(
+                  padding: EdgeInsets.all(20.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shop Info Card
+                      Container(
+                        padding: EdgeInsets.all(20.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.shop.shopName,
+                              style: TextStyle(
+                                fontSize: 20.sp,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                            SizedBox(height: 12.h),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0XFF363062).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: Icon(
+                                    Icons.location_on_rounded,
+                                    color: const Color(0XFF363062),
+                                    size: 16.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Địa chỉ',
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          color: const Color(0xFF6B7280),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${widget.shop.location.address} (${widget.km == 0.0 ? '0.1' : widget.km}km)',
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          color: const Color(0xFF111827),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12.h),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(8.w),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  child: Icon(
+                                    Icons.star_rounded,
+                                    color: Colors.amber,
+                                    size: 16.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 12.w),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Đánh giá',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        color: const Color(0xFF6B7280),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.rate,
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        color: const Color(0xFF111827),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      // Action Buttons
+                      Container(
+                        padding: EdgeInsets.all(20.w),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildModernActionButton(
+                              icon: Icons.map_outlined,
+                              label: 'Bản đồ',
+                              color: const Color(0xFF3B82F6),
+                              onTap: () {
+                                openMapWithAddress(
+                                  address: widget.shop.location.address,
+                                  wardName: widget.shop.location.wardName,
+                                  districtName: widget.shop.location.districtName,
+                                  provinceName: widget.shop.location.provinceName,
+                                );
+                              },
+                            ),
+                            _buildModernActionButton(
+                              icon: Icons.chat_bubble_outline_rounded,
+                              label: 'Chat',
+                              color: const Color(0xFF10B981),
+                              onTap: () {},
+                            ),
+                            _buildModernActionButton(
+                              icon: Icons.phone_outlined,
+                              label: 'Gọi',
+                              color: const Color(0xFF8B5CF6),
+                              onTap: () {},
+                            ),
+                            _buildModernActionButton(
+                              icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+                              label: 'Yêu thích',
+                              color: isFavorite ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+                              onTap: () {
+                                setState(() {
+                                  isFavorite = !isFavorite;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      SizedBox(height: 32.h),
+
+                      // Tab Bar
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.all(4.w),
+                          child: Row(
+                            children: List.generate(tabs.length, (index) {
+                              final selected = selectedIndex == index;
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedIndex = index;
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  margin: EdgeInsets.symmetric(horizontal: 2.w),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 20.w,
+                                    vertical: 12.h,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: selected
+                                        ? const Color(0XFF363062)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(12.r),
+                                  ),
+                                  child: Text(
+                                    tabs[index],
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: selected
+                                          ? Colors.white
+                                          : const Color(0xFF6B7280),
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                      ),
+
+                      SizedBox(height: 24.h),
+
+                      // Tab Content
+                      BlocBuilder<ServiceCubit, ServiceState>(
+                        builder: (context, state) {
+                          if (state is ServiceLoading) {
+                            return _buildLoadingState();
+                          }
+                          if (state is ServiceError) {
+                            return _buildErrorState(state.message);
+                          }
+                          if (state is ServiceLoaded) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20.r),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(20.w),
+                                child: buildTabContent(
+                                  index: selectedIndex,
+                                  shop: widget.shop,
+                                  listServices: state.listServices,
+                                ),
+                              ),
+                            );
+                          }
+                          return const SizedBox();
+                        },
+                      ),
+
+                      SizedBox(height: 20.h),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 24.sp,
+            ),
           ),
+          SizedBox(height: 8.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: const Color(0xFF374151),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      height: 200.h,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0XFF363062)),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Đang tải dữ liệu...',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: const Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Container(
+      height: 200.h,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48.sp,
+              color: const Color(0xFFEF4444),
+            ),
+            SizedBox(height: 16.h),
+            Text(
+              'Có lỗi xảy ra',
+              style: TextStyle(
+                fontSize: 16.sp,
+                color: const Color(0xFF111827),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: const Color(0xFF6B7280),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -327,10 +641,8 @@ class _DetailBarberState extends State<DetailBarber>
     );
 
     if (closeTime.isAfter(openTime)) {
-      // Mở và đóng trong cùng 1 ngày
       return now.isAfter(openTime) && now.isBefore(closeTime);
     } else {
-      // Trường hợp shop mở qua đêm
       return now.isAfter(openTime) || now.isBefore(closeTime);
     }
   }
