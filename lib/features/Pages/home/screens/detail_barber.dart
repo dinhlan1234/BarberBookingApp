@@ -15,8 +15,9 @@ import 'package:url_launcher/url_launcher.dart';
 class DetailBarber extends StatefulWidget {
   final ShopModel shop;
   final double km;
+  final String rate;
 
-  const DetailBarber({super.key, required this.shop, required this.km});
+  const DetailBarber({super.key, required this.shop, required this.km,required this.rate});
 
   @override
   State<DetailBarber> createState() => _DetailBarberState();
@@ -126,12 +127,7 @@ class _DetailBarberState extends State<DetailBarber>
                   ),
                   SizedBox(height: 12.h),
                   // ten shop
-                  customText(
-                    text: widget.shop.shopName,
-                    color: Color(0xFF111827),
-                    fonSize: 16.sp,
-                    fonWeight: FontWeight.bold,
-                  ),
+                  customText(text: widget.shop.shopName, color: Color(0xFF111827), fonSize: 16.sp, fonWeight: FontWeight.bold,),
                   SizedBox(height: 4.h),
                   Row(
                     children: [
@@ -151,7 +147,7 @@ class _DetailBarberState extends State<DetailBarber>
                     children: [
                       Icon(Icons.star_outlined, color: Color(0xFF8683A1)),
                       customText(
-                        text: '  ${widget.shop.ratingAvg}',
+                        text: '  ${widget.rate}',
                         color: Color(0xFF8683A1),
                         fonSize: 14.sp,
                         fonWeight: FontWeight.normal,

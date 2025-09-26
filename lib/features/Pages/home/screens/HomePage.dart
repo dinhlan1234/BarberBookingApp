@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:testrunflutter/core/format/FormatPrice.dart';
 import 'package:testrunflutter/core/helper/aleart.dart';
 import 'package:testrunflutter/core/widgets/MapCard.dart';
 import 'package:testrunflutter/core/widgets/ShopCard.dart';
@@ -19,6 +20,7 @@ import 'package:testrunflutter/data/models/ShopWithDistance.dart';
 import 'package:testrunflutter/data/models/UserModel.dart';
 import 'package:testrunflutter/data/repositories/prefs/UserPrefsService.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/City/CityState.dart';
+import 'package:testrunflutter/features/Pages/home/screens/search/search_shop_field.dart';
 import 'package:testrunflutter/features/Pages/home/widgets/HomePopup.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/City/CityCubit.dart';
 import 'package:vietnam_provinces/vietnam_provinces.dart';
@@ -104,7 +106,6 @@ class _HomePageState extends State<HomePage> {
       lat = position.latitude.toString();
       lon = position.longitude.toString();
 
-      print("LAT: $lat, LNG: $lon");
       if(lat.isNotEmpty && lon.isNotEmpty){
         final listShop = await dtb.nearestShops(double.parse(lat), double.parse(lon));
         if(listShop.isNotEmpty){
@@ -150,6 +151,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         controller: _scrollController,
@@ -251,42 +253,10 @@ class _HomePageState extends State<HomePage> {
               ),
               SizedBox(height: 14.h,),
               // Phần tìm kiếm
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEBF0F5), // Màu nền nhẹ giống ảnh
-                        borderRadius: BorderRadius.circular(12.r),
-                      ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          prefixIcon: Icon(Icons.search, color: const Color(0xFF64748B),weight: 20.r,),
-                          hintText: "Bạn đang tìm kiếm quán cắt tóc?",
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 14.h),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Container(
-                    width: 48.w,
-                    height: 48.h,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF363062),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: IconButton(
-                      onPressed: () {
-                        _openPopup(context);
-                      },
-                      icon: Icon(Icons.tune, color: Colors.white, size: 24.sp),
-                    ),
-                  ),
-                ],
-              ),
+              SearchShopField(lat: double.parse(lat), lon: double.parse(lon),userModel: _userModel!),
               SizedBox(height: 14.h,),
+
+              // quán cắt tóc gần đây
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -294,8 +264,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               SizedBox(height: 14.h,),
-              // quán cắt tóc gần đây
-
               if (listNearestShops.isNotEmpty)
                 ...listNearestShops.take(3).map((shop) {
                   final locationModel = shop.shop.location;
@@ -305,11 +273,11 @@ class _HomePageState extends State<HomePage> {
                     urlImage: shop.shop.shopAvatarImageUrl,
                     name: shop.shop.shopName,
                     address: locationModel.address,
-                    rate: shop.shop.ratingAvg.toString(),
+                    rate: '${double.parse(shop.ratingModel.rating.toString())} (${shop.ratingModel.quantity})',
                   );
                 }).toList()
               else
-                Container(
+                SizedBox(
                   height: 100.h,
                   child: const Center(
                     child: Text(
@@ -321,8 +289,6 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-
-
 
               OutlinedButton(
                   onPressed: (){},
@@ -441,9 +407,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               SizedBox(height: 10.h,),
-              // const ShopCard(urlImage: 'assets/images/barber4.png', name: 'Bom Barber', address: ' 39 Lê Thiện Trị', rate: '5.0'),
-              // const ShopCard(urlImage: 'assets/images/barber5.png', name: 'Bụi Barber', address: ' 29 Chương Dương', rate: '5.0'),
-              // const ShopCard(urlImage: 'assets/images/barber6.png', name: 'Central Barber', address: ' 3 Cách Mạng Tháng 8', rate: '5.0'),
               OutlinedButton(
                   onPressed: (){},
                   style: OutlinedButton.styleFrom(
@@ -480,9 +443,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-
-
 }
 
 

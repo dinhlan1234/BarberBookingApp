@@ -18,7 +18,7 @@ class ShopCard extends StatelessWidget {
     return GestureDetector(
       onTap: (){
         Navigator.push(context, PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => DetailBarber(shop: shop,km: km,),
+          pageBuilder: (context, animation, secondaryAnimation) => DetailBarber(shop: shop,km: km,rate: rate,),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             const begin = Offset(1.0, 0.0);
             const end = Offset.zero;

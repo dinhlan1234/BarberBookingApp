@@ -473,21 +473,10 @@ class _ProcessState extends State<Process> {
       final startAllow = bookingDateTime.subtract(const Duration(minutes: 10));
       final endAllow = bookingDateTime.add(const Duration(minutes: 10));
 
-      // Debug logs
-      print("=== CHECKIN DEBUG ===");
-      print("Now: ${now.toString()}");
-      print("Booking: ${bookingDateTime.toString()}");
-      print("Start allow: ${startAllow.toString()}");
-      print("End allow: ${endAllow.toString()}");
-      print("Now >= Start: ${now.isAfter(startAllow) || now.isAtSameMomentAs(startAllow)}");
-      print("Now <= End: ${now.isBefore(endAllow) || now.isAtSameMomentAs(endAllow)}");
 
       // Kiểm tra thời gian hiện tại có nằm trong khoảng [startAllow, endAllow]
       bool canCheck = (now.isAfter(startAllow) || now.isAtSameMomentAs(startAllow)) &&
           (now.isBefore(endAllow) || now.isAtSameMomentAs(endAllow));
-
-      print("Can check in: $canCheck");
-      print("==================");
 
       return canCheck;
 

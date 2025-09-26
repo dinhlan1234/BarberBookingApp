@@ -11,6 +11,7 @@ import 'package:testrunflutter/data/models/BookingModel/BookingWithShop.dart';
 import 'package:testrunflutter/data/models/BookingModel/ReviewModel.dart';
 import 'package:testrunflutter/data/models/BookingModel/ServicesSelected.dart';
 import 'package:testrunflutter/data/models/LocationModel.dart';
+import 'package:testrunflutter/data/models/RatingModel.dart';
 import 'package:testrunflutter/data/models/ServiceModel.dart';
 import 'package:testrunflutter/data/models/ShopModel.dart';
 import 'package:testrunflutter/data/models/ShopWithDistance.dart';
@@ -176,11 +177,17 @@ class FireStoreDatabase {
 
       double distanceInMeters = Geolocator.distanceBetween(lat, lon, latShop, lonShop);
       double distanceKm = distanceInMeters / 1000;
-      print(distanceKm);
       if(distanceKm < 10){
         double roundedDistance = double.parse(distanceKm.toStringAsFixed(1));
-        final shopWithDistance  = ShopWithDistance(shop: shop, distanceKm: roundedDistance);
-        listShop.add(shopWithDistance);
+        final docSnapshot = await FirebaseFirestore.instance.collection('RatingShops').doc(shop.id).get();
+        if(docSnapshot.exists){
+          final data = docSnapshot.data();
+          final shopWithDistance  = ShopWithDistance(shop: shop,ratingModel: RatingModel.fromJson(data!), distanceKm: roundedDistance);
+          listShop.add(shopWithDistance);
+        }else{
+          print('khong tim thay du lieu rating');
+        }
+
       }
     }
     return listShop;
@@ -347,12 +354,27 @@ class FireStoreDatabase {
   }
 
   // review
-  Future<bool> review(String idSchedules,ReviewModel review) async{
+  Future<bool> review(BookingSchedules bookingSchedules,ReviewModel review) async{
     try{
-      final docRef = FirebaseFirestore.instance.collection('BookingSchedules').doc(idSchedules);
+      final docRef = FirebaseFirestore.instance.collection('BookingSchedules').doc(bookingSchedules.idSchedules);
       await docRef.update({
         'reviewModel': review.toJson()
       });
+      final docRating = FirebaseFirestore.instance.collection('RatingShops').doc(bookingSchedules.idShop);
+      final docRatingSnapshot = await docRating.get();
+      if(docRatingSnapshot.exists){
+        final data = docRatingSnapshot.data();
+        final int oldQuantity = (data?['quantity'] as num).toInt();
+        final double oldRating = (data?['rating'] as num).toDouble();
+
+
+        int newQuantity = oldQuantity + 1;
+        double newRating = ((oldRating * oldQuantity) + review.rating) / newQuantity;
+        await docRating.update({
+          'quantity': newQuantity,
+          'rating': newRating
+        });
+      }
       return true;
     }catch(e){
       print(e);
@@ -360,6 +382,20 @@ class FireStoreDatabase {
     }
   }
 
+  // lay khoang cách
+  Future<double> getDistance(double lat, double lon, ShopModel shop) async {
+    try{
+      final double latShop = shop.location.latitude;
+      final double lonShop = shop.location.longitude;
+      double distanceInMeters = Geolocator.distanceBetween(lat, lon, latShop, lonShop);
+      double distanceKm = distanceInMeters / 1000;
+      double roundedDistance = double.parse(distanceKm.toStringAsFixed(1));
+      return roundedDistance;
+    }catch(e){
+      print(e);
+      return 0.0;
+    }
+  }
 
 
 

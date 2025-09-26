@@ -538,7 +538,7 @@ class _HistoryDetailState extends State<HistoryDetail> {
                 setState(() {
                   _isLoading = true;
                 });
-                if(await dtb.review(widget.booking.booking.idSchedules, review)){
+                if(await dtb.review(widget.booking.booking, review)){
                   setState(() {
                     _isLoading = false;
                     _isShow = false;
