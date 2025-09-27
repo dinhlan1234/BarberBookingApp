@@ -10,6 +10,8 @@ import 'package:testrunflutter/data/models/BookingModel/BookingSchedules.dart';
 import 'package:testrunflutter/data/models/BookingModel/BookingWithShop.dart';
 import 'package:testrunflutter/data/models/BookingModel/ReviewModel.dart';
 import 'package:testrunflutter/data/models/BookingModel/ServicesSelected.dart';
+import 'package:testrunflutter/data/models/BookingWithUser.dart';
+import 'package:testrunflutter/data/models/LikeModel.dart';
 import 'package:testrunflutter/data/models/LocationModel.dart';
 import 'package:testrunflutter/data/models/RatingModel.dart';
 import 'package:testrunflutter/data/models/ServiceModel.dart';
@@ -424,6 +426,92 @@ class FireStoreDatabase {
     }
     return list;
   }
+
+  // lay danh sach danh gia cua shop
+  Future<List<BookingWithUser>> getListBookingRate(String idShop) async {
+    List<BookingWithUser> list = [];
+    // Lấy danh sách booking theo idShop
+    final bookingSnapshot = await FirebaseFirestore.instance
+        .collection('BookingSchedules')
+        .where('idShop', isEqualTo: idShop)
+        .get();
+
+    for (var doc in bookingSnapshot.docs) {
+      final data = doc.data();
+      final review = data['reviewModel'];
+      if(review != null){
+        final booking = BookingSchedules.fromJson(data);
+
+        // Lấy idUser từ data booking
+        final idUser = data['idUser'];
+        if (idUser == null) continue;
+
+        // Lấy thông tin user từ Users collection
+        final userSnapshot = await FirebaseFirestore.instance.collection('Users').doc(idUser).get();
+
+        if (!userSnapshot.exists) continue;
+
+        final userData = userSnapshot.data();
+        if (userData == null) continue;
+
+        final userModel = UserModel.fromFireStore(userData, idUser);
+
+        // Gộp lại thành BookingWithUser
+        final bookingWithUser =
+        BookingWithUser(booking: booking, userModel: userModel);
+
+        list.add(bookingWithUser);
+      }
+    }
+
+    return list;
+  }
+
+  //kiem tra da like hay chua
+  Future<bool> checkLike(String idShop,String idUser) async{
+    final likeRef = FirebaseFirestore.instance
+        .collection('Likes')
+        .doc(idShop)
+        .collection('Users')
+        .doc(idUser);
+    final likeSnapshot = await likeRef.get();
+    if(likeSnapshot.exists){
+      return true;
+    }else{
+      return false;
+    }
+  }
+  //Them hoac huy like
+  Future<void> likeOrDislike(String idShop,String idUser,LikeModel likeModel) async{
+    final docRef = FirebaseFirestore.instance
+        .collection('Likes')
+        .doc(idShop)
+        .collection('Users')
+        .doc(idUser);
+    final docSnapshot = await docRef.get();
+    if(docSnapshot.exists){
+      await docRef.delete();
+    }else{
+      await docRef.set(likeModel.toJson());
+    }
+  }
+  // lay danh sach nguoi da like
+  Future<List<UserModel>> getUserLiked(String idShop) async{
+    final docSnapshot = await FirebaseFirestore.instance.collection('Likes').doc(idShop).collection('Users').get();
+    final listLike = docSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return LikeModel.fromJson(data);
+    }).toList();
+
+    final listUser = await Future.wait(listLike.map((b) async{
+      final userSnapshot = await FirebaseFirestore.instance.collection('Users').doc(b.idUser).get();
+      final data = userSnapshot.data();
+      return UserModel.fromFireStore(data!, b.idUser);
+    }));
+    return listUser;
+  }
+
+
 
   // lấy ngày tháng năm hiện tại
   String getCurrentDate() {

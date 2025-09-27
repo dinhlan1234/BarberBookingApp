@@ -1,9 +1,19 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
+import 'package:testrunflutter/data/models/BookingModel/BookingSchedules.dart';
+import 'package:testrunflutter/data/models/BookingWithUser.dart';
+import 'package:testrunflutter/data/models/ShopModel.dart';
+import 'package:testrunflutter/features/Pages/home/cubit/Schedules/SchedulesCubit.dart';
+import 'package:testrunflutter/features/Pages/home/cubit/Schedules/SchedulesState.dart';
+import 'package:collection/collection.dart';
 
 class TabSchedule extends StatefulWidget {
-  const TabSchedule({super.key});
+  final ShopModel shop;
+
+  const TabSchedule({super.key, required this.shop});
 
   @override
   State<TabSchedule> createState() => _TabScheduleState();
@@ -19,7 +29,7 @@ class _TabScheduleState extends State<TabSchedule> {
       'name': 'Alam Carl',
       'service': 'Basic haircut',
       'avatar': 'assets/images/bom.jpg',
-      'status': 'confirmed'
+      'status': 'confirmed',
     },
     {
       'date': '2025-09-26',
@@ -27,28 +37,39 @@ class _TabScheduleState extends State<TabSchedule> {
       'name': 'Sergio Wirl',
       'service': 'Hair coloring',
       'avatar': 'assets/images/bom.jpg',
-      'status': 'pending'
+      'status': 'pending',
     },
     {
       'date': '2025-09-27',
-      'time': '10.00 am',
+      'time': '10:00',
       'name': 'John Smith',
       'service': 'Basic haircut',
       'avatar': 'assets/images/bom.jpg',
-      'status': 'confirmed'
+      'status': 'confirmed',
     },
   ];
 
-  final List<String> times = [
-    '08.00 am',
-    '08.30 am',
-    '09.00 am',
-    '09.30 am',
-    '10.00 am',
-    '10.30 am',
-    '11.00 am',
-    '11.30 am',
-  ];
+  List<String> times = [];
+
+  void _getTime() {
+    final listTime = generateTimeSlots(
+      widget.shop.openHour,
+      widget.shop.closeHour,
+    );
+    if (listTime.isNotEmpty) {
+      times = listTime;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getTime();
+    // Load data khi khởi tạo widget
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SchedulesCubit>().loadBookingByDate(selectedDate);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +144,10 @@ class _TabScheduleState extends State<TabSchedule> {
                     ),
                   ),
                   style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 8.h,
+                    ),
                   ),
                 ),
               ),
@@ -155,17 +179,29 @@ class _TabScheduleState extends State<TabSchedule> {
               SizedBox(height: 16.h),
 
               // Timeline items
-              Column(
-                children: times.map((time) {
-                  final todayStr = DateFormat('yyyy-MM-dd').format(selectedDate);
-                  final appointment = scheduleData.firstWhere(
-                        (item) => item['time'] == time && item['date'] == todayStr,
-                    orElse: () => {},
-                  );
-
-                  return _buildTimelineItem(time, appointment);
-                }).toList(),
-              ),
+              BlocBuilder<SchedulesCubit,SchedulesState>(
+                  builder: (context,state){
+                    if(state is SchedulesLoading){
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }else if( state is SchedulesError){
+                      return Text('xu ly sau');
+                    }else if(state is SchedulesLoaded){
+                      List<BookingWithUser> listBooking = state.listBooking;
+                      return Column(
+                        children: times.map((time) {
+                          final todayStr = DateFormat('dd/MM/yyyy',).format(selectedDate);
+                          final appointment = listBooking.firstWhereOrNull(
+                                (item) => item.booking.bookingDateModel.time == time && item.booking.bookingDateModel.date == todayStr,
+                          );
+                          return _buildTimelineItem(time, appointment);
+                        }).toList(),
+                      );
+                    }
+                    return SizedBox();
+                  }
+              )
             ],
           ),
         ),
@@ -173,8 +209,8 @@ class _TabScheduleState extends State<TabSchedule> {
     );
   }
 
-  Widget _buildTimelineItem(String time, Map<String, dynamic> appointment) {
-    final hasAppointment = appointment.isNotEmpty;
+  Widget _buildTimelineItem(String time, BookingWithUser? appointment) {
+    final hasAppointment = appointment != null;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
@@ -194,7 +230,9 @@ class _TabScheduleState extends State<TabSchedule> {
                         ? const Color(0xFF111827)
                         : const Color(0xFF9CA3AF),
                     fontSize: 13.sp,
-                    fontWeight: hasAppointment ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: hasAppointment
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
                 if (hasAppointment)
@@ -203,7 +241,7 @@ class _TabScheduleState extends State<TabSchedule> {
                     width: 4.w,
                     height: 4.w,
                     decoration: BoxDecoration(
-                      color: _getStatusColor(appointment['status']),
+                      color: _getStatusColor(appointment.booking.status),
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
@@ -224,8 +262,8 @@ class _TabScheduleState extends State<TabSchedule> {
     );
   }
 
-  Widget _buildAppointmentCard(Map<String, dynamic> appointment) {
-    final statusColor = _getStatusColor(appointment['status']);
+  Widget _buildAppointmentCard(BookingWithUser appointment) {
+    final statusColor = _getStatusColor(appointment.booking.status);
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -243,7 +281,9 @@ class _TabScheduleState extends State<TabSchedule> {
             ),
             child: CircleAvatar(
               radius: 18.r,
-              backgroundImage: AssetImage(appointment['avatar']),
+              backgroundImage: appointment.userModel.avatarUrl == '0'
+                  ? AssetImage('assets/images/avtMacDinh.jpg')
+                  : CachedNetworkImageProvider(appointment.userModel.avatarUrl),
             ),
           ),
           SizedBox(width: 12.w),
@@ -252,7 +292,7 @@ class _TabScheduleState extends State<TabSchedule> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  appointment['name'],
+                  appointment.userModel.name,
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.bold,
@@ -261,7 +301,7 @@ class _TabScheduleState extends State<TabSchedule> {
                 ),
                 SizedBox(height: 2.h),
                 Text(
-                  appointment['service'],
+                  appointment.booking.servicesSelected.services.map((service) => service.name ).join(', '),
                   style: TextStyle(
                     fontSize: 12.sp,
                     color: const Color(0xFF6B7280),
@@ -275,7 +315,7 @@ class _TabScheduleState extends State<TabSchedule> {
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                   child: Text(
-                    _getStatusText(appointment['status']),
+                    _getStatusText(appointment.booking.status),
                     style: TextStyle(
                       fontSize: 10.sp,
                       color: statusColor,
@@ -297,7 +337,10 @@ class _TabScheduleState extends State<TabSchedule> {
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
+        border: Border.all(
+          color: Colors.grey.shade200,
+          style: BorderStyle.solid,
+        ),
       ),
       child: Center(
         child: Row(
@@ -325,27 +368,43 @@ class _TabScheduleState extends State<TabSchedule> {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'confirmed':
+      case 'Chờ duyệt':
+        return const Color(0xFFF59E0B); // cam
+      case 'Hoàn thành1':
+        return const Color(0xFF10B981); // xanh lá
+      case 'Hoàn thành2':
         return const Color(0xFF10B981);
-      case 'pending':
-        return const Color(0xFFF59E0B);
-      case 'cancelled':
-        return const Color(0xFFEF4444);
+      case 'Đã duyệt':
+        return const Color(0xFF3B82F6); // xanh dương
+      case 'Đã đến':
+        return const Color(0xFF6366F1); // tím
+      case 'Rủi ro':
+        return const Color(0xFFEF4444); // đỏ
+      case 'Đã hủy':
+        return const Color(0xFF9CA3AF); // xám
       default:
-        return const Color(0xFF6B7280);
+        return const Color(0xFF6B7280); // mặc định: xám đậm
     }
   }
 
   String _getStatusText(String status) {
     switch (status) {
-      case 'confirmed':
-        return 'Đã xác nhận';
-      case 'pending':
-        return 'Chờ xác nhận';
-      case 'cancelled':
+      case 'Chờ duyệt':
+        return 'Chờ duyệt';
+      case 'Hoàn thành1':
+        return 'Hoàn thành';
+      case 'Hoàn thành2':
+        return 'Hoàn thành';
+      case 'Đã duyệt':
+        return 'Đã duyệt';
+      case 'Đã đến':
+        return 'Đã đến';
+      case 'Rủi ro':
+        return 'Rủi ro';
+      case 'Đã hủy':
         return 'Đã hủy';
       default:
-        return 'Không xác định';
+        return status;
     }
   }
 
@@ -376,6 +435,47 @@ class _TabScheduleState extends State<TabSchedule> {
       setState(() {
         selectedDate = picked;
       });
+      context.read<SchedulesCubit>().loadBookingByDate(selectedDate);
     }
+  }
+
+  List<String> generateTimeSlots(String openHour, String closeHour) {
+    // Tách giờ và phút
+    final openParts = openHour.split(":");
+    final closeParts = closeHour.split(":");
+
+    // Tạo DateTime cho giờ mở và đóng
+    final now = DateTime.now();
+    final openTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(openParts[0]),
+      int.parse(openParts[1]),
+    );
+    final closeTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(closeParts[0]),
+      int.parse(closeParts[1]),
+    );
+
+    List<String> timeSlots = [];
+    DateTime currentTime = openTime;
+
+    // Lặp tới khi currentTime < closeTime
+    while (currentTime.isBefore(closeTime) ||
+        currentTime.isAtSameMomentAs(closeTime)) {
+      // Format HH:mm
+      final hour = currentTime.hour.toString().padLeft(2, '0');
+      final minute = currentTime.minute.toString().padLeft(2, '0');
+      timeSlots.add("$hour:$minute");
+
+      // Tăng 30 phút
+      currentTime = currentTime.add(Duration(minutes: 30));
+    }
+
+    return timeSlots;
   }
 }

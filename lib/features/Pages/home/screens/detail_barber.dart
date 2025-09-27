@@ -1,12 +1,18 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:testrunflutter/core/widgets/TextBasic.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:testrunflutter/data/firebase/FireStore.dart';
+import 'package:testrunflutter/data/models/LikeModel.dart';
 import 'package:testrunflutter/data/models/ShopModel.dart';
+import 'package:testrunflutter/data/models/UserModel.dart';
+import 'package:testrunflutter/data/repositories/prefs/UserPrefsService.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/Service/ServiceCubit.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/Service/ServiceState.dart';
+import 'package:testrunflutter/features/Pages/home/cubit/Schedules/SchedulesCubit.dart';
 import 'package:testrunflutter/features/Pages/home/widgets/TabContent/buildTabContent.dart';
 import 'package:testrunflutter/features/Pages/home/widgets/buildActionButton.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,12 +29,14 @@ class DetailBarber extends StatefulWidget {
   State<DetailBarber> createState() => _DetailBarberState();
 }
 
-class _DetailBarberState extends State<DetailBarber>
-    with SingleTickerProviderStateMixin {
+class _DetailBarberState extends State<DetailBarber> with SingleTickerProviderStateMixin {
+  FireStoreDatabase dtb = FireStoreDatabase();
+  UserModel? _userModel;
   bool isFavorite = false;
   int selectedIndex = 0;
   final tabs = ['Về chúng tôi', 'Các dịch vụ', 'Lịch trình', 'Đánh giá'];
   late final ServiceCubit _serviceCubit;
+  late final SchedulesCubit _schedulesCubit;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -36,6 +44,8 @@ class _DetailBarberState extends State<DetailBarber>
   void initState() {
     super.initState();
     _serviceCubit = ServiceCubit(idShop: widget.shop.id);
+    _schedulesCubit = SchedulesCubit(idShop: widget.shop.id);
+    checkLike();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -49,14 +59,33 @@ class _DetailBarberState extends State<DetailBarber>
   @override
   void dispose() {
     _serviceCubit.close();
+    _schedulesCubit.close();
     _animationController.dispose();
     super.dispose();
+  }
+  Future<void> checkLike() async{
+    final userData = await UserPrefsService.getUser();
+    if (userData != null) {
+      isFavorite = await dtb.checkLike(widget.shop.id, userData.id);
+      setState(() {
+        _userModel = userData;
+      });
+    } else {
+      final newData = await dtb.getUserByEmail();
+      isFavorite = await dtb.checkLike(widget.shop.id, newData!.id);
+      setState(() {
+        _userModel = newData;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _serviceCubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _serviceCubit),
+        BlocProvider.value(value: _schedulesCubit),
+      ],
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
         body: CustomScrollView(
@@ -358,13 +387,17 @@ class _DetailBarberState extends State<DetailBarber>
                               icon: Icons.phone_outlined,
                               label: 'Gọi',
                               color: const Color(0xFF8B5CF6),
-                              onTap: () {},
+                              onTap: () {
+                                openPhoneDialer(widget.shop.phone);
+                              },
                             ),
                             _buildModernActionButton(
                               icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-                              label: 'Yêu thích',
+                              label: isFavorite ? 'Đã thích' : 'Yêu thích',
                               color: isFavorite ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
-                              onTap: () {
+                              onTap: () async{
+                                final likeModel = LikeModel(idUser:  _userModel!.id, timestamp: Timestamp.now());
+                                dtb.likeOrDislike(widget.shop.id, _userModel!.id, likeModel);
                                 setState(() {
                                   isFavorite = !isFavorite;
                                 });
@@ -661,6 +694,22 @@ class _DetailBarberState extends State<DetailBarber>
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
       throw 'Không thể mở Google Maps';
+    }
+  }
+
+  Future<void> openPhoneDialer(String phone) async {
+    final sanitized = phone.replaceAll(RegExp(r'[^\d\+]'), '');
+
+    if (sanitized.isEmpty) return;
+
+    final uri = Uri(scheme: 'tel', path: sanitized);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      print('openPhoneDialer error: $e');
     }
   }
 }

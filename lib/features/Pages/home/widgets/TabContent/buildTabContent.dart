@@ -15,9 +15,9 @@ Widget buildTabContent({required int index, required ShopModel shop, required Li
     case 1:
       return buildServicesTab(shop,listServices);
     case 2:
-      return TabSchedule();
+      return TabSchedule(shop: shop);
     case 3:
-      return Reviewstab();
+      return ReviewsTab(shop);
     default:
       return SizedBox.shrink();
   }

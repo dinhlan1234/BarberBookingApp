@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,6 @@ import 'package:testrunflutter/data/models/ShopModel.dart';
 import 'package:testrunflutter/data/repositories/services/FCMService.dart';
 import 'package:testrunflutter/features/Pages/home/screens/invoice.dart';
 
-// trang 4
 class YourAppointment extends StatefulWidget {
   final ShopModel shop;
   final Map<String, dynamic> tempData;
@@ -28,7 +28,7 @@ class YourAppointment extends StatefulWidget {
   State<YourAppointment> createState() => _YourAppointmentState();
 }
 
-class _YourAppointmentState extends State<YourAppointment> {
+class _YourAppointmentState extends State<YourAppointment> with SingleTickerProviderStateMixin {
   FireStoreDatabase dtb = FireStoreDatabase();
   TextEditingController couponController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -38,14 +38,36 @@ class _YourAppointmentState extends State<YourAppointment> {
   List<String> coupon = ['abcz', 'bomnguyen1234', 'dinhlan12345'];
   late BookingDateModel bookingDateModel;
   late ServicesSelected servicesSelected;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _setupAnimations();
     _focusNode.addListener(() {
       setState(() {});
     });
+  }
+
+  void _setupAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+
+    _animationController.forward();
   }
 
   void _loadData() {
@@ -54,468 +76,322 @@ class _YourAppointmentState extends State<YourAppointment> {
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    _focusNode.dispose();
+    couponController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF363062),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.arrow_back),
-          color: Colors.white,
+        leading: Container(
+          margin: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12.r),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: Colors.white,
+                  size: 18.sp,
+                ),
+              ),
+            ),
+          ),
         ),
-        title: customText(
-          text: 'Thanh Toán',
-          color: Colors.white,
-          fonSize: 16.sp,
-          fonWeight: FontWeight.bold,
+        title: Text(
+          'Thanh Toán',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
       ),
-      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // Background
-          SizedBox(
-            width: double.infinity,
-            child: Image.asset('assets/icons/setIcon.png', fit: BoxFit.cover),
+          // Enhanced Background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF363062),
+                  const Color(0xFF4A4A7A),
+                  const Color(0xFF363062).withOpacity(0.8),
+                ],
+              ),
+            ),
+          ),
+
+          // Background pattern
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.1,
+              child: Image.asset(
+                'assets/icons/setIcon.png',
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
 
           SafeArea(
             child: Column(
               children: [
-                SizedBox(height: 50.h),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  child: Container(
-                    padding: EdgeInsets.all(10.r),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12.r),
-                          child: Image(
-                            image: CachedNetworkImageProvider(
-                              widget.shop.shopAvatarImageUrl,
-                            ),
-                            width: 80.w,
-                            height: 80.w,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        SizedBox(width: 10.w),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            customText(
-                              text: widget.shop.shopName,
-                              color: Colors.white,
-                              fonSize: 16.sp,
-                              fonWeight: FontWeight.bold,
-                            ),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on_rounded,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 3.w),
-                                customText(
-                                  text: widget.shop.location.address,
-                                  color: Colors.white,
-                                  fonSize: 14.sp,
-                                  fonWeight: FontWeight.normal,
-                                ),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Image.asset(
-                                  'assets/icons/star.png',
-                                  width: 14.w,
-                                  color: Colors.white,
-                                ),
-                                SizedBox(width: 3.w),
-                                customText(
-                                  text: '5.0 (24)',
-                                  color: Colors.white,
-                                  fonSize: 14.sp,
-                                  fonWeight: FontWeight.normal,
-                                ),
-                              ],
-                            ),
+                SizedBox(height: 20.h),
+
+                // Shop Info Card with Animation
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 20.w),
+                      padding: EdgeInsets.all(20.w),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.15),
+                            Colors.white.withOpacity(0.05),
                           ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Bottom trắng
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.66,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 8.w),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ngay thang dat
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_month),
-                          SizedBox(width: 2.w),
-                          customText(
-                            text: 'Ngày & thời gian',
-                            color: const Color(0xFF111827),
-                            fonSize: 16.sp,
-                            fonWeight: FontWeight.bold,
+                        borderRadius: BorderRadius.circular(20.r),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      customText(
-                        text:
-                            '${bookingDateModel.time} - ${bookingDateModel.weekdayName}, ${bookingDateModel.date}',
-                        color: const Color(0xFF6B7280),
-                        fonSize: 16.sp,
-                        fonWeight: FontWeight.normal,
-                      ),
-                      SizedBox(height: 10.h),
-
-                      // danh sach dich vu
-                      Row(
+                      child: Row(
                         children: [
-                          const Icon(CupertinoIcons.scissors_alt),
-                          SizedBox(width: 2.w),
-                          customText(
-                            text: 'Danh sách dịch vụ',
-                            color: const Color(0xFF111827),
-                            fonSize: 16.sp,
-                            fonWeight: FontWeight.bold,
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8.h),
-
-                      Column(
-                        children: List.generate(
-                          servicesSelected.services.length,
-                          (index) {
-                            final service = servicesSelected.services[index];
-                            return Container(
-                              margin: EdgeInsets.only(bottom: 12.h),
-                              padding: EdgeInsets.all(8.r),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.02),
-                                borderRadius: BorderRadius.circular(12.r),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16.r),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  CircleAvatar(
-                                    radius: 28.r,
-                                    backgroundImage: CachedNetworkImageProvider(
-                                      service.avatarUrl,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        customText(
-                                          text: service.name,
-                                          color: const Color(0xFF111827),
-                                          fonSize: 16.sp,
-                                          fonWeight: FontWeight.bold,
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        customText(
-                                          text: service.note,
-                                          color: const Color(0xFF6B7280),
-                                          fonSize: 13.sp,
-                                          fonWeight: FontWeight.normal,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        CupertinoIcons.money_dollar,
-                                        color: Color(0xFF111827),
-                                        size: 16,
-                                      ),
-                                      SizedBox(width: 2.w),
-                                      customText(
-                                        text: FormatPrice.formatPrice(
-                                          service.price,
-                                        ),
-                                        color: const Color(0xFF111827),
-                                        fonSize: 14.sp,
-                                        fonWeight: FontWeight.w600,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                      SizedBox(height: 12.h),
-                      customText(
-                        text: 'Mã giảm giá',
-                        color: const Color(0xFF111827),
-                        fonSize: 16.sp,
-                        fonWeight: FontWeight.bold,
-                      ),
-                      SizedBox(height: 10.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 4,
-                            child: SizedBox(
-                              height: 50.h,
-                              child: TextField(
-                                controller: couponController,
-                                focusNode: _focusNode,
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  color: const Color(0xFF363062),
-                                  fontSize: 13.sp,
-                                ),
-                                decoration: InputDecoration(
-                                  filled: true,
-                                  fillColor: Colors.white,
-                                  hintText: 'Nhập mã giảm giá',
-                                  prefixIcon: Padding(
-                                    padding: EdgeInsets.all(10.r),
-                                    child: Icon(
-                                      Icons.stars,
-                                      color: Color(0xFF363062),
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.horizontal(
-                                      left: Radius.circular(12.r),
-                                    ),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF363062),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.horizontal(
-                                      left: Radius.circular(12.r),
-                                    ),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFFD1D5DB),
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14.r),
+                              child: CachedNetworkImage(
+                                imageUrl: widget.shop.shopAvatarImageUrl,
+                                width: 80.w,
+                                height: 80.w,
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
+                          SizedBox(width: 16.w),
                           Expanded(
-                            flex: 1,
-                            child: SizedBox(
-                              height: 50.h,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  for (var i = 0; i < coupon.length; i++) {
-                                    if (coupon[i] == couponController.text) {
-                                      displayMessageToUser(
-                                        context,
-                                        'Đã áp dụng thành công',
-                                        isSuccess: true,
-                                        onOk: () {
-                                          setState(() {
-                                            isDisplay = true;
-                                            checkCoupon = true;
-                                          });
-                                        },
-                                      );
-                                    } else {
-                                      setState(() {
-                                        isDisplay = true;
-                                        checkCoupon = false;
-                                      });
-                                    }
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  elevation: 0,
-                                  backgroundColor: const Color(0xFF363062),
-                                  padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.horizontal(
-                                      right: Radius.circular(12.r),
-                                    ),
-                                  ),
-                                ),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: customText(
-                                    text: 'Apply',
-                                    color: Colors.white,
-                                    fonSize: 12.sp,
-                                    fonWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 3.h),
-                      isDisplay
-                          ? checkCoupon
-                                ? Text(
-                                    'Đã áp dụng mã',
-                                    style: TextStyle(
-                                      color: Color(0xFF9CA3AF),
-                                      fontSize: 12.sp,
-                                    ),
-                                  )
-                                : Text(
-                                    'Mã không chính xác',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12.sp,
-                                    ),
-                                  )
-                          : SizedBox.shrink(),
-                      SizedBox(height: 12.h),
-                      customText(
-                        text: 'Tóm tắt thanh toán',
-                        color: Color(0xFF111827),
-                        fonSize: 16.sp,
-                        fonWeight: FontWeight.bold,
-                      ),
-                      SizedBox(height: 5.h),
-                      Column(
-                        children: List.generate(
-                          servicesSelected.services.length,
-                          (index) {
-                            final service = servicesSelected.services[index];
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                customText(
-                                  text: service.name,
-                                  color: Color(0xFF111827),
-                                  fonSize: 16.sp,
-                                  fonWeight: FontWeight.normal,
+                                Text(
+                                  widget.shop.shopName,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
+                                SizedBox(height: 6.h),
                                 Row(
                                   children: [
-                                    Icon(CupertinoIcons.money_dollar),
-                                    customText(
-                                      text: FormatPrice.formatPrice(
-                                        service.price,
+                                    Icon(
+                                      Icons.location_on_rounded,
+                                      color: Colors.white.withOpacity(0.8),
+                                      size: 16.sp,
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Expanded(
+                                      child: Text(
+                                        widget.shop.location.address,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      color: Color(0xFF111827),
-                                      fonSize: 16.sp,
-                                      fonWeight: FontWeight.normal,
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 4.h),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star_rounded,
+                                      color: Colors.amber.shade400,
+                                      size: 16.sp,
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Text(
+                                      '5.0 (24 reviews)',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ],
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(height: 12.h),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Dash(
-                            direction: Axis.horizontal,
-                            length: constraints.maxWidth,
-                            dashLength: 8,
-                            dashColor: Color(0xFFC3C1D0),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 8.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          customText(
-                            text: 'Tổng tiền',
-                            color: Color(0xFF111827),
-                            fonSize: 16.sp,
-                            fonWeight: FontWeight.normal,
-                          ),
-                          Row(
-                            children: [
-                              Icon(CupertinoIcons.money_dollar),
-                              customText(
-                                text: FormatPrice.formatPrice(
-                                  servicesSelected.total,
-                                ),
-                                color: Color(0xFF111827),
-                                fonSize: 16.sp,
-                                fonWeight: FontWeight.normal,
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 8.h),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            await _onContinue();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            padding: EdgeInsets.symmetric(vertical: 10.h),
-                            backgroundColor: Color(0xFF363062),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              customText(
-                                text: 'Thanh toán',
-                                color: Colors.white,
-                                fonSize: 16.sp,
-                                fonWeight: FontWeight.bold,
-                              ),
-                              SizedBox(width: 5.w),
-                              Icon(Icons.wallet, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+
+                SizedBox(height: 24.h),
+
+                // Content Container
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 600),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(28.r)),
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.all(24.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Drag indicator
+                            Center(
+                              child: Container(
+                                width: 40.w,
+                                height: 4.h,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(2.r),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 24.h),
+
+                            // Date & Time Section
+                            _buildSectionHeader(
+                              icon: Icons.schedule_rounded,
+                              title: 'Ngày & Thời gian',
+                              iconColor: const Color(0xFF363062),
+                            ),
+                            SizedBox(height: 12.h),
+                            Container(
+                              padding: EdgeInsets.all(16.w),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF363062).withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(16.r),
+                                border: Border.all(
+                                  color: const Color(0xFF363062).withOpacity(0.1),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(10.w),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF363062).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(10.r),
+                                    ),
+                                    child: Icon(
+                                      Icons.access_time_rounded,
+                                      color: const Color(0xFF363062),
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12.w),
+                                  Expanded(
+                                    child: Text(
+                                      '${bookingDateModel.time} - ${bookingDateModel.weekdayName}, ${bookingDateModel.date}',
+                                      style: TextStyle(
+                                        color: const Color(0xFF363062),
+                                        fontSize: 15.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            SizedBox(height: 24.h),
+
+                            // Services Section
+                            _buildSectionHeader(
+                              icon: Icons.design_services_rounded,
+                              title: 'Dịch vụ đã chọn',
+                              iconColor: Colors.blue.shade600,
+                            ),
+                            SizedBox(height: 16.h),
+                            ...servicesSelected.services.map((service) =>
+                                _buildServiceCard(service)
+                            ).toList(),
+
+                            SizedBox(height: 24.h),
+
+                            // Coupon Section
+                            _buildSectionHeader(
+                              icon: Icons.local_offer_rounded,
+                              title: 'Mã giảm giá',
+                              iconColor: Colors.orange.shade600,
+                            ),
+                            SizedBox(height: 16.h),
+                            _buildCouponSection(),
+
+                            SizedBox(height: 24.h),
+
+                            // Payment Summary Section
+                            _buildSectionHeader(
+                              icon: Icons.receipt_long_rounded,
+                              title: 'Tóm tắt thanh toán',
+                              iconColor: Colors.green.shade600,
+                            ),
+                            SizedBox(height: 16.h),
+                            _buildPaymentSummary(),
+
+                            SizedBox(height: 32.h),
+
+                            // Payment Button
+                            _buildPaymentButton(),
+
+                            SizedBox(height: 16.h),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -523,10 +399,435 @@ class _YourAppointmentState extends State<YourAppointment> {
     );
   }
 
+  Widget _buildSectionHeader({
+    required IconData icon,
+    required String title,
+    required Color iconColor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8.w),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 20.sp,
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Text(
+          title,
+          style: TextStyle(
+            color: const Color(0xFF111827),
+            fontSize: 18.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServiceCard(service) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(
+                color: const Color(0xFF363062).withOpacity(0.2),
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14.r),
+              child: CachedNetworkImage(
+                imageUrl: service.avatarUrl,
+                width: 60.w,
+                height: 60.w,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  service.name,
+                  style: TextStyle(
+                    color: const Color(0xFF111827),
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Text(
+                  service.note,
+                  style: TextStyle(
+                    color: const Color(0xFF6B7280),
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  CupertinoIcons.money_dollar,
+                  color: Colors.green.shade600,
+                  size: 16.sp,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  FormatPrice.formatPrice(service.price),
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCouponSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 4,
+                child: Container(
+                  height: 56.h,
+                  child: TextField(
+                    controller: couponController,
+                    focusNode: _focusNode,
+                    style: TextStyle(
+                      color: const Color(0xFF363062),
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      hintText: 'Nhập mã giảm giá',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14.sp,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.local_offer_rounded,
+                        color: Colors.orange.shade600,
+                        size: 20.sp,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.horizontal(
+                          left: Radius.circular(16.r),
+                        ),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.horizontal(
+                          left: Radius.circular(16.r),
+                        ),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF363062),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                height: 56.h,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.orange.shade400, Colors.orange.shade600],
+                  ),
+                  borderRadius: BorderRadius.horizontal(
+                    right: Radius.circular(16.r),
+                  ),
+                ),
+                child: ElevatedButton(
+                  onPressed: _applyCoupon,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.horizontal(
+                        right: Radius.circular(16.r),
+                      ),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Text(
+                      'Áp dụng',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (isDisplay) ...[
+          SizedBox(height: 8.h),
+          Container(
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: checkCoupon
+                  ? Colors.green.withOpacity(0.1)
+                  : Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8.r),
+              border: Border.all(
+                color: checkCoupon
+                    ? Colors.green.withOpacity(0.3)
+                    : Colors.red.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  checkCoupon ? Icons.check_circle_rounded : Icons.error_rounded,
+                  color: checkCoupon ? Colors.green : Colors.red,
+                  size: 16.sp,
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  checkCoupon ? 'Mã giảm giá đã được áp dụng' : 'Mã giảm giá không hợp lệ',
+                  style: TextStyle(
+                    color: checkCoupon ? Colors.green.shade700 : Colors.red.shade700,
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPaymentSummary() {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          ...servicesSelected.services.map((service) =>
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 6.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        service.name,
+                        style: TextStyle(
+                          color: const Color(0xFF374151),
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      FormatPrice.formatPrice(service.price),
+                      style: TextStyle(
+                        color: const Color(0xFF111827),
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+          ).toList(),
+
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Dash(
+                  direction: Axis.horizontal,
+                  length: constraints.maxWidth,
+                  dashLength: 8,
+                  dashColor: Colors.grey.shade400,
+                );
+              },
+            ),
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Tổng thanh toán',
+                style: TextStyle(
+                  color: const Color(0xFF111827),
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green.shade400, Colors.green.shade600],
+                  ),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Text(
+                  FormatPrice.formatPrice(servicesSelected.total),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentButton() {
+    return Container(
+      width: double.infinity,
+      height: 56.h,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFF363062), const Color(0xFF4A4A7A)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF363062).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _onContinue,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.payment_rounded,
+              color: Colors.white,
+              size: 24.sp,
+            ),
+            SizedBox(width: 12.w),
+            Text(
+              'Xác nhận thanh toán',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _applyCoupon() {
+    bool isValidCoupon = coupon.contains(couponController.text);
+
+    if (isValidCoupon) {
+      displayMessageToUser(
+        context,
+        'Mã giảm giá đã được áp dụng thành công',
+        isSuccess: true,
+        onOk: () {
+          setState(() {
+            isDisplay = true;
+            checkCoupon = true;
+          });
+        },
+      );
+    } else {
+      setState(() {
+        isDisplay = true;
+        checkCoupon = false;
+      });
+    }
+  }
+
   Future<void> _onContinue() async {
-    try{
-      if (await dtb.checkAmount(widget.tempData['idUser'], servicesSelected.total,)) {
-        if (await dtb.booking(widget.tempData['idUser'], widget.tempData['idShop'], servicesSelected, bookingDateModel, widget.tempData['status'],)) {
+    try {
+      if (await dtb.checkAmount(widget.tempData['idUser'], servicesSelected.total)) {
+        if (await dtb.booking(
+            widget.tempData['idUser'],
+            widget.tempData['idShop'],
+            servicesSelected,
+            bookingDateModel,
+            widget.tempData['status']
+        )) {
           Navigator.push(
             context,
             PageRouteBuilder(
@@ -538,28 +839,33 @@ class _YourAppointmentState extends State<YourAppointment> {
                       'bookingDateModel': bookingDateModel
                     },
                   ),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 const begin = Offset(1.0, 0.0);
                 const end = Offset.zero;
                 final tween = Tween(begin: begin, end: end);
                 final curvedAnimation = CurvedAnimation(
                   parent: animation,
-                  curve: Curves.ease,
+                  curve: Curves.easeOutCubic,
                 );
                 return SlideTransition(
                   position: tween.animate(curvedAnimation),
                   child: child,
                 );
               },
-              transitionDuration: const Duration(milliseconds: 1000),
+              transitionDuration: const Duration(milliseconds: 600),
             ),
           );
-          dtb.sendNotification(object: 'Shops', id: widget.shop.id, title: 'Bạn có lịch hẹn mới!', body: 'Bạn có lịch hẹn mới, nhớ kiểm tra và xác nhận nhé 😊');
-        }else{
+
+          dtb.sendNotification(
+              object: 'Shops',
+              id: widget.shop.id,
+              title: 'Bạn có lịch hẹn mới!',
+              body: 'Bạn có lịch hẹn mới, nhớ kiểm tra và xác nhận nhé'
+          );
+        } else {
           displayMessageToUser(
             context,
-            'Có lỗi trong lúc đặt lịch. Vui lòng thao tác lại sau!',
+            'Có lỗi xảy ra trong quá trình đặt lịch. Vui lòng thử lại sau!',
             isSuccess: false,
             onOk: () {},
           );
@@ -567,13 +873,19 @@ class _YourAppointmentState extends State<YourAppointment> {
       } else {
         displayMessageToUser(
           context,
-          'Tài khoản của bạn không đủ tiền. Vui lòng nạp thêm tiền để đặt lịch hẹn !',
+          'Tài khoản không đủ số dư. Vui lòng nạp thêm tiền để tiếp tục!',
           isSuccess: false,
           onOk: () {},
         );
       }
-    }catch(e){
-      print(e);
+    } catch (e) {
+      print('Error in _onContinue: $e');
+      displayMessageToUser(
+        context,
+        'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau!',
+        isSuccess: false,
+        onOk: () {},
+      );
     }
   }
 }
