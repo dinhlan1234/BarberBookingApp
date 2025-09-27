@@ -33,6 +33,7 @@ class _BookAppointmentState extends State<BookAppointment> {
     super.initState();
     _getTime();
     _fetchUser();
+    _loadInitialBookedTimes();
   }
 
   List<String> timeSlots = [];
@@ -59,6 +60,23 @@ class _BookAppointmentState extends State<BookAppointment> {
         _userModel = newData;
       });
     }
+  }
+
+  // Hàm mới: Load booked times cho ngày hiện tại khi khởi tạo
+  void _loadInitialBookedTimes() async {
+    String formattedDate = DateFormat('dd/MM/yyyy', 'vi_VN').format(selectedDate);
+    final bookedTimes = await dtb.getBookedTimes(widget.shop.id, formattedDate);
+
+    final newDisabled = <int>{};
+    for (int i = 0; i < timeSlots.length; i++) {
+      if (bookedTimes.contains(timeSlots[i])) {
+        newDisabled.add(i);
+      }
+    }
+
+    setState(() {
+      disabled = newDisabled;
+    });
   }
 
   @override
