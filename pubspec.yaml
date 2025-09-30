@@ -45,6 +45,7 @@ dependencies:
   path: ^1.9.1
   pointycastle: ^4.0.0
   dart_jsonwebtoken: ^3.2.0
+  loading_animation_widget: ^1.3.0
 
 dev_dependencies:
   flutter_screenutil: ^5.9.3
@@ -61,32 +62,23 @@ flutter:
     - assets/images/welcome2.png
     - assets/images/welcome3.png
     - assets/images/login.png
-    - assets/icons/Calendar Mark.png
-    - assets/icons/home.png
-    - assets/icons/star.png
-    - assets/icons/profile.png
     - assets/images/avtMacDinh.jpg
     - assets/images/barber2.png
     - assets/images/barber1.png
     - assets/images/Barber3.png
-    - assets/images/barber4.png
     - assets/images/bom.jpg
-    - assets/images/barber5.png
-    - assets/images/barber6.png
-    - assets/images/avtBarber.jpg
     - assets/icons/fillter_icon_barberbooking.png
     - assets/icons/setIcon.png
-    - assets/icons/discount-shape.png
     - assets/images/success3.png
     - assets/logos/logov1.png
     - assets/level/medal.png
     - assets/notification/notification.mp3
-    - assets/icons/bubble-chat.png
-    - assets/icons/google-maps.png
-    - assets/icons/share.png
-    - assets/icons/Chat Round Unread.png
     - assets/level/sliver.png
     - assets/level/gold.png
     - assets/level/diamond.png
     - assets/icons/questionDiscord.png
+    - assets/icons/homeBottom.png
+    - assets/icons/profileBottom.png
+    - assets/icons/calendarBottom2.png
+    - assets/icons/cahtBottom2.png
     - assets/appsales-a042c-firebase-adminsdk-fbsvc-6dac53de74.json

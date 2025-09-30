@@ -10,6 +10,8 @@ import 'package:testrunflutter/data/firebase/FireStore.dart';
 import 'package:testrunflutter/data/models/UserModel.dart';
 import 'package:testrunflutter/features/Pages/profile/cubit/money/MoneyCubit.dart';
 import 'package:testrunflutter/features/Pages/profile/cubit/money/MoneyState.dart';
+import 'package:testrunflutter/features/Pages/profile/screens/wallet/History/Page/HistoryPage.dart';
+import 'package:testrunflutter/features/Pages/profile/screens/wallet/Transaction/Page/TransactionPage.dart';
 import 'package:testrunflutter/features/Pages/profile/screens/wallet/wallet_qrCode.dart';
 
 class Wallet extends StatefulWidget {
@@ -198,9 +200,43 @@ class _WalletState extends State<Wallet> {
                   ),
                   child: Column(
                     children: [
-                      _customElevatedButton('Giao dịch', () {}),
+                      _customElevatedButton('Giao dịch', () {
+                        Navigator.push(context, PageRouteBuilder(pageBuilder: (context, animation, secondaryAnimation)
+                        => TransactionPage(userId: user!.id),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child,) {
+                            const begin = Offset(1.0, 0.0,); // Bắt đầu bên phải màn hình
+                            const end = Offset.zero; // Kết thúc ở vị trí hiện tại
+                            final tween = Tween(begin: begin, end: end);
+                            final curvedAnimation = CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.ease,
+                            );
+                            return SlideTransition(position: tween.animate(curvedAnimation), child: child,
+                            );
+                          },
+                          transitionDuration: const Duration(milliseconds: 1000,), // thời gian chuyển cảnh
+                        ),
+                        );
+                      }),
                       SizedBox(height: 15.h),
-                      _customElevatedButton('Lịch sử nạp rút tiền', () {}),
+                      _customElevatedButton('Lịch sử nạp rút tiền', () {
+                        Navigator.push(context, PageRouteBuilder(pageBuilder: (context, animation, secondaryAnimation)
+                        => HistoryPage(id: user!.id),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child,) {
+                            const begin = Offset(1.0, 0.0,); // Bắt đầu bên phải màn hình
+                            const end = Offset.zero; // Kết thúc ở vị trí hiện tại
+                            final tween = Tween(begin: begin, end: end);
+                            final curvedAnimation = CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.ease,
+                            );
+                            return SlideTransition(position: tween.animate(curvedAnimation), child: child,
+                            );
+                          },
+                          transitionDuration: const Duration(milliseconds: 1000,), // thời gian chuyển cảnh
+                        ),
+                        );
+                      }),
                     ],
                   ),
                 ),

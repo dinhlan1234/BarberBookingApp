@@ -162,10 +162,11 @@ class _QRCodeState extends State<QRCode> {
         if (contentParts.contains(contentSplit[0]) &&
             contentParts.contains(contentSplit[1])) {
           try {
-            await dtb.rechargeUser(money, contentSplit[1]);
+            final balance = await dtb.rechargeUser(money, contentSplit[1]);
             tele.sendMessage(
               '$time - ${widget.description} - ${splitMoney[0]}',
             );
+            dtb.saveTransactionHistory(contentSplit[1], null, double.parse(money), balance, 'Nạp tiền');
             check = true;
           } on FirebaseException catch (e) {
             print(e.message);

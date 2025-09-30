@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:testrunflutter/core/widgets/TextBasic.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:testrunflutter/data/firebase/ChatRepository.dart';
 import 'package:testrunflutter/data/firebase/FireStore.dart';
 import 'package:testrunflutter/data/models/LikeModel.dart';
 import 'package:testrunflutter/data/models/ShopModel.dart';
 import 'package:testrunflutter/data/models/UserModel.dart';
 import 'package:testrunflutter/data/repositories/prefs/UserPrefsService.dart';
+import 'package:testrunflutter/features/Pages/chat/screens/ChatPage.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/Service/ServiceCubit.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/Service/ServiceState.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/Schedules/SchedulesCubit.dart';
@@ -381,7 +383,26 @@ class _DetailBarberState extends State<DetailBarber> with SingleTickerProviderSt
                               icon: Icons.chat_bubble_outline_rounded,
                               label: 'Chat',
                               color: const Color(0xFF10B981),
-                              onTap: () {},
+                              onTap: () async{
+                                ChatRepository chatRepository = ChatRepository();
+                                final currentUserId = _userModel!.id;
+                                final shopId = widget.shop.id;
+                                final shopName = widget.shop.shopName;
+                                final shopAvatar = widget.shop.shopAvatarImageUrl;
+                                final conversationId = await chatRepository.getOrCreateConversation(userId: currentUserId, userName: _userModel!.name, shopId: shopId, shopName: shopName,shopAvatar: shopAvatar,shopAddress: widget.shop.location.address,userAvatar: _userModel!.avatarUrl);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatPage(
+                                      conversationId: conversationId.id,
+                                      currentUserId: currentUserId,
+                                      currentUserType: "user",
+                                      shopName: shopName,
+                                      shopAvatar: shopAvatar,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                             _buildModernActionButton(
                               icon: Icons.phone_outlined,

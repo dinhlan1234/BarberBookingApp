@@ -1,31 +1,21 @@
-import 'dart:convert';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:testrunflutter/core/format/FormatPrice.dart';
 import 'package:testrunflutter/core/helper/aleart.dart';
 import 'package:testrunflutter/core/widgets/MapCard.dart';
 import 'package:testrunflutter/core/widgets/ShopCard.dart';
-import 'package:testrunflutter/core/widgets/TextBasic.dart';
 import 'package:testrunflutter/data/firebase/FireStore.dart';
-import 'package:testrunflutter/data/models/LocationModel.dart';
-import 'package:testrunflutter/data/models/ShopModel.dart';
 import 'package:testrunflutter/data/models/ShopWithDistance.dart';
 import 'package:testrunflutter/data/models/UserModel.dart';
 import 'package:testrunflutter/data/repositories/prefs/UserPrefsService.dart';
-import 'package:testrunflutter/features/Pages/home/cubit/City/CityState.dart';
 import 'package:testrunflutter/features/Pages/home/screens/more/NearShop.dart';
 import 'package:testrunflutter/features/Pages/home/screens/more/RateShop.dart';
 import 'package:testrunflutter/features/Pages/home/screens/search/search_shop_field.dart';
 import 'package:testrunflutter/features/Pages/home/widgets/HomePopup.dart';
-import 'package:testrunflutter/features/Pages/home/cubit/City/CityCubit.dart';
-import 'package:vietnam_provinces/vietnam_provinces.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -141,28 +131,15 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: EdgeInsets.all(20.w),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0XFF363062)),
-                ),
+              LoadingAnimationWidget.bouncingBall(
+                color: const Color(0XFF363062),
+                size: 50.w,
               ),
               SizedBox(height: 20.h),
               Text(
-                'Đang tải dữ liệu...',
+                'Đang tìm kiếm quán gần đây cho bạn',
                 style: TextStyle(
-                  fontSize: 16.sp,
+                  fontSize: 14.sp,
                   color: const Color(0xFF6B7280),
                   fontWeight: FontWeight.w500,
                 ),
@@ -173,6 +150,7 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
@@ -180,7 +158,6 @@ class _HomePageState extends State<HomePage> {
         controller: _scrollController,
         child: Column(
           children: [
-            // Header section with gradient background
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
