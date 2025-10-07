@@ -4,7 +4,7 @@ class ChatMessage {
   final String id;
   final String conversationId;
   final String senderId;
-  final String senderType;
+  final String senderType; // user or shop
   final String text;
   final String? imageUrl;
   final String? fileUrl;

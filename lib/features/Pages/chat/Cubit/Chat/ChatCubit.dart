@@ -21,8 +21,7 @@ class ChatCubit extends Cubit<ChatState> {
     required this.conversationId,
     required this.currentUserId,
     required this.currentUserType,
-  })  : _repository = repository,
-        super(ChatInitial()) {
+  })  : _repository = repository, super(ChatInitial()) {
     loadMessages();
     markAsRead();
   }
@@ -44,10 +43,7 @@ class ChatCubit extends Cubit<ChatState> {
         // Nếu đã có conversation trong state, giữ nguyên
         if (state is ChatLoaded) {
           final currentState = state as ChatLoaded;
-          emit(ChatLoaded(
-            messages: messages,
-            conversation: currentState.conversation,
-          ));
+          emit(ChatLoaded(messages: messages, conversation: currentState.conversation,));
         } else {
           // Lần đầu load, cần lấy conversation
           _loadConversationData(messages);
@@ -104,7 +100,6 @@ class ChatCubit extends Cubit<ChatState> {
     MessageType type = MessageType.text,
   }) async {
     try {
-      // Không emit ChatSending nữa để tránh gián đoạn UI
       await _repository.sendMessage(
         conversationId: conversationId,
         senderId: currentUserId,
@@ -116,8 +111,6 @@ class ChatCubit extends Cubit<ChatState> {
         type: type,
       );
 
-      // Stream sẽ tự động nhận message mới, không cần reload
-      // Tin nhắn sẽ xuất hiện ngay lập tức qua listener
     } catch (e) {
       emit(ChatError('Không thể gửi tin nhắn: $e'));
     }
@@ -131,7 +124,6 @@ class ChatCubit extends Cubit<ChatState> {
         currentUserType: currentUserType,
       );
     } catch (e) {
-      // Không emit error để không làm gián đoạn UX
       print('Không thể đánh dấu đã đọc: $e');
     }
   }

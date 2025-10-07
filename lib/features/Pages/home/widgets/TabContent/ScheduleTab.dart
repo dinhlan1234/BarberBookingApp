@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:testrunflutter/data/models/BookingModel/BookingSchedules.dart';
 import 'package:testrunflutter/data/models/BookingWithUser.dart';
 import 'package:testrunflutter/data/models/ShopModel.dart';
 import 'package:testrunflutter/features/Pages/home/cubit/Schedules/SchedulesCubit.dart';
@@ -22,33 +21,6 @@ class TabSchedule extends StatefulWidget {
 class _TabScheduleState extends State<TabSchedule> {
   DateTime selectedDate = DateTime.now();
 
-  final List<Map<String, dynamic>> scheduleData = [
-    {
-      'date': '2025-09-26',
-      'time': '08.30 am',
-      'name': 'Alam Carl',
-      'service': 'Basic haircut',
-      'avatar': 'assets/images/bom.jpg',
-      'status': 'confirmed',
-    },
-    {
-      'date': '2025-09-26',
-      'time': '09.00 am',
-      'name': 'Sergio Wirl',
-      'service': 'Hair coloring',
-      'avatar': 'assets/images/bom.jpg',
-      'status': 'pending',
-    },
-    {
-      'date': '2025-09-27',
-      'time': '10:00',
-      'name': 'John Smith',
-      'service': 'Basic haircut',
-      'avatar': 'assets/images/bom.jpg',
-      'status': 'confirmed',
-    },
-  ];
-
   List<String> times = [];
 
   void _getTime() {
@@ -65,7 +37,6 @@ class _TabScheduleState extends State<TabSchedule> {
   void initState() {
     super.initState();
     _getTime();
-    // Load data khi khởi tạo widget
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SchedulesCubit>().loadBookingByDate(selectedDate);
     });

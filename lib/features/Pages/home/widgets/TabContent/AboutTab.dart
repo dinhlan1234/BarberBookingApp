@@ -306,7 +306,7 @@ Widget buildAboutTab(ShopModel shop, List<ServiceModel> listServices) {
                                 "Chưa có ai thích cửa hàng này",
                                 style: TextStyle(
                                   color: Colors.grey.shade600,
-                                  fontSize: 14.sp,
+                                  fontSize: 12.sp,
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),

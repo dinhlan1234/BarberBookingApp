@@ -347,7 +347,7 @@ class FireStoreDatabase {
       final snapshot = await FirebaseFirestore.instance
           .collection("BookingSchedules")
           .where("idShop", isEqualTo: shopId)
-          .where("bookingDateModel.date", isEqualTo: date) // so sánh theo ngày
+          .where("bookingDateModel.date", isEqualTo: date)
           .get();
 
       return snapshot.docs

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:testrunflutter/core/widgets/MapCard.dart';
-import 'package:testrunflutter/core/widgets/TextBasic.dart'; // Giả định có customText
-import 'package:geolocator/geolocator.dart'; // Thêm gói geolocator
+import 'package:testrunflutter/core/widgets/TextBasic.dart';
+import 'package:geolocator/geolocator.dart';
 
 class FindABarber extends StatefulWidget {
   const FindABarber({super.key});

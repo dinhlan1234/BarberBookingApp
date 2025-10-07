@@ -513,11 +513,7 @@ class _DetailBarberState extends State<DetailBarber> with SingleTickerProviderSt
                               ),
                               child: Padding(
                                 padding: EdgeInsets.all(20.w),
-                                child: buildTabContent(
-                                  index: selectedIndex,
-                                  shop: widget.shop,
-                                  listServices: state.listServices,
-                                ),
+                                child: buildTabContent(index: selectedIndex, shop: widget.shop, listServices: state.listServices,),
                               ),
                             );
                           }
