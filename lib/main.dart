@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:testrunflutter/core/widgets/CustomScrollBehavior.dart';
 import 'package:testrunflutter/features/Auth/authPage.dart';
@@ -9,6 +10,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: "env/.env");
+
+    print("✅ ENV loaded: ${dotenv.env}");
+  } catch (e) {
+    print("❌ Lỗi load ENV: $e");
+  }
   await Firebase.initializeApp();
   await VietnamProvinces.initialize();
   await initializeDateFormatting('vi_VN', null);

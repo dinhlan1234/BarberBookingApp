@@ -1,8 +1,9 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class TelegramServices {
-  final String token = '7632597869:AAFUj1pVo4IpG5WCfgRePtnIvsrfaKF6j08';
-  final String id = '1542014977';
+  final String token = dotenv.env['TELEGRAM_BOT_TOKEN'] ?? '';
+  final String id = dotenv.env['TELEGRAM_CHAT_ID'] ?? '';
 
   Future<void> sendMessage(String message) async {
     final encodedMessage = Uri.encodeComponent(message);

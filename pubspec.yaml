@@ -46,6 +46,7 @@ dependencies:
   pointycastle: ^4.0.0
   dart_jsonwebtoken: ^3.2.0
   loading_animation_widget: ^1.3.0
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_screenutil: ^5.9.3
@@ -82,3 +83,4 @@ flutter:
     - assets/icons/calendarBottom2.png
     - assets/icons/cahtBottom2.png
     - assets/appsales-a042c-firebase-adminsdk-fbsvc-6dac53de74.json
+    - env/.env

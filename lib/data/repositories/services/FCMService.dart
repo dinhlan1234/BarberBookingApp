@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';  // Import package JWT
 import 'package:flutter/services.dart' show rootBundle;  // Để đọc assets
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 
 class FCMService {
-  static const String projectId = 'appsales-a042c';
-  static const String serviceAccountPath = 'assets/appsales-a042c-firebase-adminsdk-fbsvc-6dac53de74.json';
+  static final String projectId = dotenv.env['FCM_PROJECT_ID'] ?? '';
+  static final String serviceAccountPath = dotenv.env['FCM_SERVICE_ACCOUNT'] ?? '';
 
   static Future<bool> sendFCMNotification({
     required String title,

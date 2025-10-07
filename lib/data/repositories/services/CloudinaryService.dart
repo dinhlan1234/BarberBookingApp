@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class CloudinarySignedUploader {
-  final String cloudName = 'dcinrewso';
-  final String apiKey = '232333749894945';
-  final String apiSecret = '_aINVah6kIaJvgL79Dwm_UvLGFs';
-  final String uploadPreset = 'flutter_upload';
+  final String cloudName =  dotenv.env['CLOUD_NAME']!;
+  final String apiKey = dotenv.env['API_KEY']!;
+  final String apiSecret = dotenv.env['API_SECRET']!;
+  final String uploadPreset = dotenv.env['UPLOAD_PRESET']!;
 
   Future<String?> uploadImage(File imageFile) async {
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
