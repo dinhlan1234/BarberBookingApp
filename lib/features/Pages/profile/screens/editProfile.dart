@@ -179,6 +179,15 @@ class _EditProfileState extends State<EditProfile> {
           Navigator.pop(context);
         }
       }
+    }else{
+      if(_userModel != null){
+        final user = UserModel(_userModel!.id, nameController.text, emailController.text, phoneController.text,_userModel!.provinceName, _userModel!.provinceCode, _userModel!.money,  _userModel!.avatarUrl,  _userModel!.creationDate, 'Client',_userModel!.fcmToken);
+        await dtb.saveUser(user);
+        if(context.mounted){
+          Navigator.pop(context);
+          Navigator.pop(context);
+        }
+      }
     }
   }
 

@@ -281,7 +281,7 @@ class FireStoreDatabase {
       } else {
         await FirebaseFirestore.instance.collection('Users').doc(idUser).update(
             {
-              'money': subtraction.toString()
+              'money': double.parse(subtraction.toStringAsFixed(0)).toString()
             });
         return true;
       }
