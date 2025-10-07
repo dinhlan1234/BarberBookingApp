@@ -46,3 +46,4 @@ app.*.map.json
 
 # Environment variables
 env/.env
+assets/appsales-a042c-firebase-adminsdk-fbsvc-ae3e9d08c8.json

@@ -1,0 +1,59 @@
+[33mcommit e6f27d6b8e392d2ce19ef12a5e59782c55effe2e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Tue Oct 7 21:39:26 2025 +0700
+
+    Remove OSMMap.dart and ignore .env file
+
+[33mcommit 964585e4be5df4ffbace8c749ad8029b9bec3202[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Tue Oct 7 21:37:05 2025 +0700
+
+    Remove sensitive file from git tracking
+
+[33mcommit 5bb6674cdc8dfac48a1f54538ddc81e071e4e092[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Tue Oct 7 21:02:30 2025 +0700
+
+    new
+
+[33mcommit 185501af9781731c998ea84dcb9228bf65c74a98[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Wed Oct 1 00:15:21 2025 +0700
+
+    chat
+
+[33mcommit a877fd3b1f1c3ea380c7188a9bed1d391fbdc860[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Sun Sep 28 03:06:08 2025 +0700
+
+    sửa lỗi không ẩn những giờ đã đặt
+
+[33mcommit 373c822007385c870e1b2eadd8cf44395962ccf1[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Sun Sep 28 02:46:10 2025 +0700
+
+    chỉnh sửa các giao diện trong phần đặt lịch, thêm chức răng like và các tab trong detail
+
+[33mcommit ba106ff24f0c6cd9681a17c6113095637cb07ccb[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Sat Sep 27 00:26:52 2025 +0700
+
+    Chỉnh sửa giao diện và thêm phần xem thêm
+
+[33mcommit 32c537d490789d3dae8b065a83fa4317f531f9ec[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Fri Sep 26 22:19:11 2025 +0700
+
+    Search và hiển thị rate
+
+[33mcommit b8300806beb577603278a11cc4f9cf3d89a9fe5f[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Mon Sep 22 23:37:10 2025 +0700
+
+    Thêm chức năng lịch trình và lịch sử
+
+[33mcommit 2946f026a90fe72889fbd2b18eaba3793c5f8600[m
+Author: dinhlan1234 <dinhlan74qt@gmail.com>
+Date:   Mon Sep 15 08:26:38 2025 +0700
+
+    Chức năng lịch trình
